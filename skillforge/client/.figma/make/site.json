@@ -1,0 +1,10 @@
+{
+  "description": "Delivers a responsive, data-driven dashboard with assessments and AI guidance tailored for professionals seeking precise readiness insights across devices.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
