@@ -1,0 +1,49 @@
+{
+  "benchmarks": [
+    {
+      "role": "Backend Engineer",
+      "project_specification": "High-Concurrency FinTech Ledger API",
+      "architecture": "FastAPI, PostgreSQL, Redis, Celery",
+      "deliverables": [
+        "Idempotent transaction endpoints",
+        "Redis distributed locking mechanism",
+        "Comprehensive pytest suite with 90%+ coverage"
+      ],
+      "rubric": {
+        "architecture_quality": 0.3,
+        "concurrency_handling": 0.4,
+        "test_coverage": 0.3
+      }
+    },
+    {
+      "role": "AI / ML Specialist",
+      "project_specification": "Autonomous RAG Research Agent",
+      "architecture": "LangGraph, pgvector, Gemini API, FastAPI",
+      "deliverables": [
+        "Stateful multi-turn reasoning graph",
+        "Vector search with hybrid keyword retrieval",
+        "Evaluation pipeline for hallucination rates"
+      ],
+      "rubric": {
+        "retrieval_accuracy": 0.35,
+        "reasoning_robustness": 0.4,
+        "code_modularity": 0.25
+      }
+    },
+    {
+      "role": "Cloud / DevOps Engineer",
+      "project_specification": "Zero-Downtime Microservices Platform",
+      "architecture": "Kubernetes, GitHub Actions, Terraform, Prometheus",
+      "deliverables": [
+        "Infrastructure as Code deployment scripts",
+        "Multi-stage Dockerfiles",
+        "Grafana observability dashboards"
+      ],
+      "rubric": {
+        "automation_completeness": 0.4,
+        "security_posture": 0.3,
+        "observability": 0.3
+      }
+    }
+  ]
+}

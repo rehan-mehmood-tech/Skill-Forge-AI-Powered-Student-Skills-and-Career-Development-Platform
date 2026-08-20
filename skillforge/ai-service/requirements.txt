@@ -1,0 +1,7 @@
+sentence-transformers
+langchain-huggingface
+langchain-groq
+groq
+supabase
+pytest
+python-dotenv
