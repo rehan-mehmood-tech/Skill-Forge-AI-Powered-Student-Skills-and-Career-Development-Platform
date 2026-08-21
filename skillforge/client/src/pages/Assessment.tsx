@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import type { View } from "../App";
+import { post } from "../lib/api";
 
 interface Props {
   onNavigate: (v: View) => void;
@@ -185,6 +186,10 @@ export default function Assessment({ onNavigate }: Props) {
   const [selected,    setSelected]    = useState<number | null>(null);
   const [submitted,   setSubmitted]   = useState(false);
   const [autosaved,   setAutosaved]   = useState(false);
+  
+  const [answers, setAnswers] = useState<number[]>(new Array(TOTAL).fill(-1));
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const q = QUESTIONS[questionIdx];
   const progressPct = Math.round((questionIdx / TOTAL) * 100);
@@ -193,16 +198,53 @@ export default function Assessment({ onNavigate }: Props) {
   const handleSelect = (idx: number) => {
     if (submitted) return;
     setSelected(idx);
+    const newAnswers = [...answers];
+    newAnswers[questionIdx] = idx;
+    setAnswers(newAnswers);
     setAutosaved(true);
     setTimeout(() => setAutosaved(false), 2000);
   };
 
   const handleSubmit = () => { if (selected !== null) setSubmitted(true); };
 
-  const handleNext = () => {
-    if (isLast) { onNavigate("results"); return; }
+  const handleNext = async () => {
+    if (isLast) { 
+      setIsSubmitting(true);
+      setError(null);
+      
+      // Calculate scores
+      const scores: Record<string, { correct: number, total: number }> = {};
+      QUESTIONS.forEach((q, i) => {
+        if (!scores[q.domain]) {
+          scores[q.domain] = { correct: 0, total: 0 };
+        }
+        scores[q.domain].total += 1;
+        if (answers[i] === q.correctIndex) {
+          scores[q.domain].correct += 1;
+        }
+      });
+      
+      const payload = {
+        student_id: "me", // Depending on API this might be replaced/injected on the gateway
+        answers: scores,
+        // The API actually expects `AnalyzeSkillsRequest` with fields or similar.
+        // Let's pass the raw scores. The python backend might need specific fields.
+        raw_scores: scores,
+        current_skills: [],
+        target_role: "Software Engineer",
+      };
+
+      try {
+        await post('/ai/analyze-skills', payload);
+        onNavigate("results"); 
+      } catch (err: any) {
+        setError(err.message || "Failed to submit assessment");
+        setIsSubmitting(false);
+      }
+      return; 
+    }
     setQuestionIdx((i) => i + 1);
-    setSelected(null);
+    setSelected(answers[questionIdx + 1] !== -1 ? answers[questionIdx + 1] : null);
     setSubmitted(false);
   };
 
@@ -309,12 +351,18 @@ export default function Assessment({ onNavigate }: Props) {
           </div>
 
           {/* Bottom actions */}
+          {error && <div className="mt-4 text-danger text-sm">{error}</div>}
           <div className="mt-8 flex items-center justify-between">
             <button
-              disabled={questionIdx === 0}
-              onClick={() => { setQuestionIdx((i) => Math.max(0, i - 1)); setSelected(null); setSubmitted(false); }}
+              disabled={questionIdx === 0 || isSubmitting}
+              onClick={() => { 
+                const newIdx = Math.max(0, questionIdx - 1);
+                setQuestionIdx(newIdx); 
+                setSelected(answers[newIdx] !== -1 ? answers[newIdx] : null); 
+                setSubmitted(false); 
+              }}
               className={`h-9 px-4 rounded-lg border border-border bg-surface text-text-secondary text-sm font-medium transition-colors ${
-                questionIdx === 0 ? "opacity-30 cursor-not-allowed" : "hover:bg-surface-hover hover:text-text-primary cursor-pointer"
+                questionIdx === 0 || isSubmitting ? "opacity-30 cursor-not-allowed" : "hover:bg-surface-hover hover:text-text-primary cursor-pointer"
               }`}
             >
               ← Previous
@@ -323,9 +371,12 @@ export default function Assessment({ onNavigate }: Props) {
             {submitted ? (
               <button
                 onClick={handleNext}
-                className="h-9 px-4 rounded-lg bg-white text-black text-sm font-semibold hover:bg-zinc-100 transition-colors cursor-pointer"
+                disabled={isSubmitting}
+                className={`h-9 px-4 rounded-lg bg-white text-black text-sm font-semibold transition-colors ${
+                  isSubmitting ? "opacity-50 cursor-wait" : "hover:bg-zinc-100 cursor-pointer"
+                }`}
               >
-                {isLast ? "Finish Assessment" : "Next Question →"}
+                {isSubmitting ? "Analyzing..." : (isLast ? "Finish Assessment" : "Next Question →")}
               </button>
             ) : (
               <button

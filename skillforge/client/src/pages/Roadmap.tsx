@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { View, AppUser } from "../App";
+import { post } from "../lib/api";
 import AppShell from "../components/AppShell";
 
 interface Props {
@@ -203,6 +204,7 @@ function TopicNode({
 
 export default function Roadmap({ onNavigate, user, onLogout }: Props) {
   const [phases, setPhases] = useState<Phase[]>(INITIAL_PHASES);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const updateTopicStatus = (topicId: string, newStatus: TopicStatus) => {
     setPhases((prev) =>
@@ -211,6 +213,57 @@ export default function Roadmap({ onNavigate, user, onLogout }: Props) {
         topics: phase.topics.map((t) => (t.id === topicId ? { ...t, status: newStatus } : t)),
       }))
     );
+  };
+
+  const handleGenerateRoadmap = async () => {
+    setIsGenerating(true);
+    try {
+      const response: any = await post('/ai/generate-roadmap', {
+        target_role: "Backend Developer",
+        timeframe_weeks: 12
+      });
+      
+      // Assume the backend returns an array of phases in `roadmap.phases` or similar.
+      if (response.roadmap && response.roadmap.phases) {
+        // Simple mapping, might need adjustment based on exact backend shape
+        const newPhases = response.roadmap.phases.map((p: any, i: number) => ({
+          id: `p${i + 1}`,
+          label: `Phase 0${i + 1}`,
+          name: p.name || p.title,
+          status: i === 0 ? "active" : "future",
+          progress: `0/${p.topics?.length || 0} topics`,
+          topics: (p.topics || []).map((t: any, j: number) => ({
+            id: `t${i}_${j}`,
+            name: t.name || t.title,
+            status: "pending",
+            projects: t.projects || [],
+            resources: t.resources || []
+          }))
+        }));
+        setPhases(newPhases);
+      } else if (Array.isArray(response)) {
+          const newPhases = response.map((p: any, i: number) => ({
+          id: `p${i + 1}`,
+          label: `Phase 0${i + 1}`,
+          name: p.name || p.title || p.phase_name,
+          status: i === 0 ? "active" : "future",
+          progress: `0/${p.topics?.length || 0} topics`,
+          topics: (p.topics || []).map((t: any, j: number) => ({
+            id: `t${i}_${j}`,
+            name: t.name || t.title,
+            status: "pending",
+            projects: t.projects || [],
+            resources: t.resources || []
+          }))
+        }));
+        setPhases(newPhases);
+      }
+    } catch (e) {
+      console.error("Failed to generate roadmap", e);
+      alert("Failed to generate roadmap. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -232,8 +285,14 @@ export default function Roadmap({ onNavigate, user, onLogout }: Props) {
               </div>
             </div>
             <div className="flex items-center gap-3 flex-shrink-0">
-              <button className="h-9 px-4 rounded-lg border border-border bg-surface text-text-secondary text-sm font-medium hover:bg-surface-hover hover:text-text-primary transition-colors cursor-pointer">
-                Regenerate →
+              <button 
+                onClick={handleGenerateRoadmap}
+                disabled={isGenerating}
+                className={`h-9 px-4 rounded-lg border border-border bg-surface text-text-secondary text-sm font-medium transition-colors ${
+                  isGenerating ? "opacity-50 cursor-wait" : "hover:bg-surface-hover hover:text-text-primary cursor-pointer"
+                }`}
+              >
+                {isGenerating ? "Generating..." : "Regenerate →"}
               </button>
               <button className="font-sans text-sm text-text-muted hover:text-text-secondary transition-colors cursor-pointer">
                 Export PDF
@@ -244,8 +303,18 @@ export default function Roadmap({ onNavigate, user, onLogout }: Props) {
 
         {/* Phase timeline */}
         <div className="relative max-w-[800px]">
-          {/* Vertical spine */}
-          <div className="absolute bg-border" style={{ left: 7, top: 12, bottom: 48, width: 1 }} />
+          {isGenerating ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center">
+              <div className="flex items-center gap-2 text-text-muted mb-4">
+                <div className="w-1.5 h-1.5 rounded-full bg-accent animate-ping" />
+                <span className="font-mono text-sm uppercase tracking-widest">AI Engine Computing</span>
+              </div>
+              <p className="font-sans text-text-secondary text-lg">Analyzing skill gaps and calculating optimal learning paths...</p>
+            </div>
+          ) : (
+            <>
+              {/* Vertical spine */}
+              <div className="absolute bg-border" style={{ left: 7, top: 12, bottom: 48, width: 1 }} />
 
           {INITIAL_PHASES.map((phase, pi) => (
             <div key={phase.id} className={`relative ${pi > 0 ? "mt-10" : ""}`}>
@@ -292,6 +361,8 @@ export default function Roadmap({ onNavigate, user, onLogout }: Props) {
               </div>
             </div>
           ))}
+            </>
+          )}
         </div>
 
       </div>

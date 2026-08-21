@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { post } from "../lib/api";
 
 interface Message {
   id: string;
@@ -53,29 +54,56 @@ export default function CopilotDrawer({ isOpen, onClose }: Props) {
     }
   }, [messages, isOpen]);
 
-  const sendMessage = (text: string) => {
+  const sendMessage = async (text: string) => {
     if (!text.trim() || isStreaming) return;
     const userMsg: Message = { id: Date.now().toString(), role: "user", content: text.trim() };
     const typingMsg: Message = { id: (Date.now() + 1).toString(), role: "assistant", content: "", isTyping: true };
     setMessages((prev) => [...prev, userMsg, typingMsg]);
     setInput("");
     setIsStreaming(true);
-    setTimeout(() => {
+
+    try {
+      // Map previous messages to conversation_history format expected by backend if needed
+      // Currently, backend expects list of dicts: [{role: "user", content: "..."}]
+      const history = messages
+        .filter(m => !m.isTyping && m.role !== 'assistant') // just simple history for now, or all
+        .map(m => ({ role: m.role, content: m.content }));
+
+      const res: any = await post('/ai/chat-agent', { 
+        message: text.trim(), 
+        target_role: "Backend Developer",
+        conversation_history: history
+      });
+
       setMessages((prev) =>
         prev.map((m) =>
-          m.isTyping
+          m.id === typingMsg.id
             ? {
                 ...m,
                 isTyping: false,
-                content:
-                  "Great question. Looking at your skill vector, I recommend focusing on Docker and containerization first — it closes your DevOps gap fastest. Start with Phase 3 in your roadmap.",
-                citations: ["[↗ DevOps Learning Path 2026]"],
+                content: res.response || "No response received.",
+                citations: res.citations || [],
+                toolTrace: res.action_taken ? [`> action: ${res.action_taken}`] : undefined
               }
             : m
         )
       );
+    } catch (err) {
+      console.error(err);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === typingMsg.id
+            ? {
+                ...m,
+                isTyping: false,
+                content: "I'm sorry, I'm having trouble connecting to my servers right now. Please try again later.",
+              }
+            : m
+        )
+      );
+    } finally {
       setIsStreaming(false);
-    }, 2000);
+    }
   };
 
   return (

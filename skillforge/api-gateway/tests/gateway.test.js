@@ -57,4 +57,19 @@ describe('API Gateway Integration Tests', () => {
     expect(res.body).toEqual({ response: "Success" });
     expect(axios.post).toHaveBeenCalledTimes(1);
   });
+
+  test('POST /api/ai/generate-roadmap with valid Auth -> 200 OK', async () => {
+    axios.post.mockResolvedValue({ 
+      status: 200, 
+      data: { roadmap: { phases: [] } } 
+    });
+    
+    const res = await request(app)
+      .post('/api/ai/generate-roadmap')
+      .set('Authorization', 'Bearer valid-token')
+      .send({ target_role: "Software Engineer", timeframe_weeks: 12 });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ roadmap: { phases: [] } });
+  });
 });
