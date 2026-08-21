@@ -24,6 +24,10 @@ app.use(express.urlencoded({ extended: true }));
 // Redis connection for rate limit
 const redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 
+redisClient.on('error', (err) => {
+  console.warn('Redis connection failed, running in fallback mode');
+});
+
 // Rate limiting
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -43,7 +47,11 @@ app.use('/api/ai', aiProxyRouter);
 
 // Health Endpoint
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: "healthy", service: "api-gateway" });
+  res.status(200).json({ 
+    status: 'healthy', 
+    service: 'api-gateway',
+    redis: redisClient?.status === 'ready' ? 'connected' : 'memory-fallback'
+  });
 });
 
 // Port binding
