@@ -3,7 +3,6 @@ import type { View, AppUser } from "../App";
 interface Props {
   active:         View;
   onNavigate:     (v: View) => void;
-  onOpenCopilot:  () => void;
   user?:          AppUser | null;
   onLogout?:      () => void;
 }
@@ -16,7 +15,7 @@ const NAV_ITEMS: { id: View | "copilot"; label: string; icon: string }[] = [
   { id: "profile",     label: "Profile",     icon: "◷" },
 ];
 
-export default function Sidebar({ active, onNavigate, onOpenCopilot, user, onLogout }: Props) {
+export default function Sidebar({ active, onNavigate, user, onLogout }: Props) {
   const initials = user
     ? user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
     : "AK";
@@ -46,8 +45,10 @@ export default function Sidebar({ active, onNavigate, onOpenCopilot, user, onLog
           return (
             <button
               key={item.id}
-              onClick={() => isCopilot ? onOpenCopilot() : onNavigate(item.id as View)}
-              className={`relative flex items-center gap-3 h-8 px-3 rounded-lg text-[13px] font-medium transition-colors duration-100 cursor-pointer w-full text-left ${
+              onClick={() => { if (!isCopilot) onNavigate(item.id as View); }}
+              className={`relative flex items-center gap-3 h-8 px-3 rounded-lg text-[13px] font-medium transition-colors duration-100 w-full text-left ${
+                isCopilot ? "hidden" : ""
+              } ${
                 isActive
                   ? "bg-surface-hover text-text-primary"
                   : "text-[#71717A] hover:bg-surface hover:text-text-secondary"

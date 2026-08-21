@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
+import { supabase } from "./lib/supabaseClient";
+import { STUDENT_USER, MENTOR_USER } from "./components/AuthModal";
 import Landing from "./pages/Landing";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
@@ -13,6 +15,7 @@ import Features from "./pages/Features";
 import Curriculum from "./pages/Curriculum";
 import Mentors from "./pages/Mentors";
 import Docs from "./pages/Docs";
+import FloatingAgentWidget from "./components/FloatingAgentWidget";
 
 export type View =
   | "landing" | "onboarding" | "dashboard" | "assessments"
@@ -73,9 +76,34 @@ export default function App() {
       if (isMounted) setView(pathToView(window.location.pathname));
     };
     window.addEventListener("popstate", handler);
+    
+    // Auth Persistence
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (isMounted && session?.user) {
+        const metadata = session.user.user_metadata || {};
+        const isMentor = metadata.role === "mentor";
+        const baseUser = isMentor ? MENTOR_USER : STUDENT_USER;
+        setUser({ ...baseUser, name: metadata.full_name || metadata.name || baseUser.name });
+      }
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (isMounted) {
+        if (session?.user) {
+          const metadata = session.user.user_metadata || {};
+          const isMentor = metadata.role === "mentor";
+          const baseUser = isMentor ? MENTOR_USER : STUDENT_USER;
+          setUser({ ...baseUser, name: metadata.full_name || metadata.name || baseUser.name });
+        } else {
+          setUser(null);
+        }
+      }
+    });
+
     return () => {
       isMounted = false;
       window.removeEventListener("popstate", handler);
+      authListener.subscription.unsubscribe();
     };
   }, []);
 
@@ -113,6 +141,7 @@ export default function App() {
     <>
       <Toaster position="top-right" />
       {renderView()}
+      {user && <FloatingAgentWidget />}
     </>
   );
 }
