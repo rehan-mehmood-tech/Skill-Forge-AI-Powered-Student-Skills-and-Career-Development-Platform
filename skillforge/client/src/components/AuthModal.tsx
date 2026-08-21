@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { View, AppUser } from "../App";
 import { signInWithGoogle, signInWithPassword, signUpWithPassword } from "../lib/auth";
+import toast from 'react-hot-toast';
 
 export const STUDENT_USER: AppUser = {
   name:         "Aisha Khan",
@@ -53,7 +54,9 @@ export default function AuthModal({
     setLoading(false);
     if (errorMsg) {
       setError(errorMsg);
+      toast.error(errorMsg);
     } else {
+      toast.success("Successfully authenticated!");
       // For now, fallback to mock user state until we sync it with App.tsx full real state
       const user = role === "student" ? { ...STUDENT_USER, name: fullName || "Student" } : { ...MENTOR_USER, name: fullName || "Mentor" };
       onLogin(user);
@@ -84,7 +87,9 @@ export default function AuthModal({
   }
 
   async function handleGoogleSignIn() {
-    await signInWithGoogle();
+    setLoading(true);
+    const { error } = await signInWithGoogle();
+    handleAuthResult(error?.message || null);
   }
 
   return (
@@ -92,7 +97,7 @@ export default function AuthModal({
       className="fixed inset-0 z-[60] flex items-center justify-center bg-canvas/80 backdrop-blur-sm animate-fade-in"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-[440px] mx-4 bg-surface border border-border rounded-xl p-8 animate-fade-up max-h-[90vh] overflow-y-auto">
+      <div className="w-[95%] sm:w-full max-w-md mx-auto sm:mx-4 bg-surface border border-border rounded-xl p-6 sm:p-8 animate-fade-up max-h-[90vh] overflow-y-auto">
         {(message || error) && (
           <div className="mb-5 px-4 py-3 bg-surface-hover border border-border rounded-lg">
             <p className={`font-sans text-[13px] leading-snug ${error ? 'text-red-500' : 'text-text-secondary'}`}>
@@ -171,7 +176,8 @@ export default function AuthModal({
 
         <button
           onClick={handleGoogleSignIn}
-          className="flex items-center justify-center w-full h-9 rounded-lg bg-surface-hover border border-border text-text-primary text-sm font-medium hover:bg-zinc-800 transition-colors cursor-pointer"
+          disabled={loading}
+          className="flex items-center justify-center w-full h-9 rounded-lg bg-surface-hover border border-border text-text-primary text-sm font-medium hover:bg-zinc-800 transition-colors cursor-pointer disabled:opacity-50"
         >
           <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -179,7 +185,7 @@ export default function AuthModal({
             <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
           </svg>
-          Continue with Google
+          {loading ? "Connecting to Google..." : "Continue with Google"}
         </button>
 
         <p className="mt-4 text-center font-sans text-[12px] text-text-muted">

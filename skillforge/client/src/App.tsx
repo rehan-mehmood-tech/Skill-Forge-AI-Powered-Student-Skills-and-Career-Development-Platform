@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Toaster } from "react-hot-toast";
 import Landing from "./pages/Landing";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
@@ -67,9 +68,15 @@ export default function App() {
   const [user, setUser] = useState<AppUser | null>(null);
 
   useEffect(() => {
-    const handler = () => setView(pathToView(window.location.pathname));
+    let isMounted = true;
+    const handler = () => {
+      if (isMounted) setView(pathToView(window.location.pathname));
+    };
     window.addEventListener("popstate", handler);
-    return () => window.removeEventListener("popstate", handler);
+    return () => {
+      isMounted = false;
+      window.removeEventListener("popstate", handler);
+    };
   }, []);
 
   function navigate(v: View) {
@@ -84,19 +91,28 @@ export default function App() {
   const publicProps = { onNavigate: navigate, user, onLogin: login };
   const authProps   = { onNavigate: navigate, user, onLogout: logout };
 
-  switch (view) {
-    case "landing":     return <Landing     {...publicProps} />;
-    case "features":    return <Features    {...publicProps} />;
-    case "curriculum":  return <Curriculum  {...publicProps} />;
-    case "mentors":     return <Mentors     {...publicProps} />;
-    case "docs":        return <Docs        {...publicProps} />;
-    case "onboarding":  return <Onboarding  onNavigate={navigate} onLogin={login} />;
-    case "assessments": return <AssessmentPicker onNavigate={navigate} />;
-    case "assessment":  return <Assessment  onNavigate={navigate} />;
-    case "results":     return <AssessmentResults onNavigate={navigate} />;
-    case "roadmap":     return <Roadmap     {...authProps} />;
-    case "profile":     return <Profile     {...authProps} />;
-    case "admin":       return <Admin       {...authProps} />;
-    default:            return <Dashboard   {...authProps} />;
-  }
+  const renderView = () => {
+    switch (view) {
+      case "landing":     return <Landing     {...publicProps} />;
+      case "features":    return <Features    {...publicProps} />;
+      case "curriculum":  return <Curriculum  {...publicProps} />;
+      case "mentors":     return <Mentors     {...publicProps} />;
+      case "docs":        return <Docs        {...publicProps} />;
+      case "onboarding":  return <Onboarding  onNavigate={navigate} onLogin={login} />;
+      case "assessments": return <AssessmentPicker onNavigate={navigate} />;
+      case "assessment":  return <Assessment  onNavigate={navigate} />;
+      case "results":     return <AssessmentResults onNavigate={navigate} />;
+      case "roadmap":     return <Roadmap     {...authProps} />;
+      case "profile":     return <Profile     {...authProps} />;
+      case "admin":       return <Admin       {...authProps} />;
+      default:            return <Dashboard   {...authProps} />;
+    }
+  };
+
+  return (
+    <>
+      <Toaster position="top-right" />
+      {renderView()}
+    </>
+  );
 }

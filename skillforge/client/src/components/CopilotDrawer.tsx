@@ -122,9 +122,8 @@ export default function CopilotDrawer({ isOpen, onClose }: Props) {
         role="dialog"
         aria-modal="true"
         aria-label="Career Copilot"
-        className="fixed top-0 right-0 h-full z-50 flex flex-col border-l border-border transition-transform duration-200 ease-out"
+        className="fixed top-0 right-0 h-full w-full sm:w-[400px] z-50 flex flex-col border-l border-border transition-transform duration-200 ease-out"
         style={{
-          width: 400,
           backgroundColor: "#0F0F12",
           transform: isOpen ? "translateX(0)" : "translateX(100%)",
         }}
@@ -249,12 +248,14 @@ export default function CopilotDrawer({ isOpen, onClose }: Props) {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
               placeholder="Ask about your skill gaps..."
-              className="w-full h-9 pl-3 pr-10 rounded-lg bg-surface-hover border border-border font-mono text-[12px] text-text-secondary placeholder-text-muted focus:outline-none focus:ring-1 focus:ring-accent"
+              disabled={isStreaming}
+              className="w-full h-9 pl-3 pr-10 rounded-lg bg-surface-hover border border-border font-mono text-[12px] text-text-secondary placeholder-text-muted focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50"
             />
             <button
               onClick={() => sendMessage(input)}
+              disabled={isStreaming}
               className={`absolute right-3 font-sans font-medium text-sm transition-colors cursor-pointer ${
-                input.trim() ? "text-text-primary" : "text-text-muted"
+                input.trim() && !isStreaming ? "text-text-primary" : "text-text-muted cursor-not-allowed"
               }`}
               aria-label="Send message"
             >

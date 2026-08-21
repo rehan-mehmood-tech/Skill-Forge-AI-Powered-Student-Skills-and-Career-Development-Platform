@@ -201,7 +201,7 @@ export default function Profile({ onNavigate, user, onLogout }: Props) {
             </div>
 
             {/* Raw JSONB block */}
-            <div className="bg-canvas border border-border rounded-lg p-4 mb-5 font-mono text-[12px] leading-6">
+            <div className="bg-canvas border border-border rounded-lg p-4 mb-5 font-mono text-[12px] leading-6 w-full overflow-x-auto">
               <span className="text-text-muted">{"{"}</span>
               {SKILL_VECTOR.map((row) => (
                 <div key={row.key} className="ml-4">
@@ -220,7 +220,8 @@ export default function Profile({ onNavigate, user, onLogout }: Props) {
             </div>
 
             {/* Visual table */}
-            <div className="flex flex-col">
+            <div className="flex flex-col w-full overflow-x-auto">
+              <div className="min-w-[500px]">
               {/* Header */}
               <div className="flex items-center gap-3 pb-2 border-b border-border">
                 <span className="font-mono text-[10px] text-text-muted uppercase tracking-wide flex-shrink-0" style={{ width: 96 }}>Domain</span>
@@ -270,6 +271,7 @@ export default function Profile({ onNavigate, user, onLogout }: Props) {
                   </div>
                 </div>
               ))}
+              </div>
             </div>
           </div>
 

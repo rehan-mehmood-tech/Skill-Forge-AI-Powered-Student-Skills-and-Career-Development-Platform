@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { supabase } from './supabaseClient';
+import toast from 'react-hot-toast';
 
 const API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:5000';
 
@@ -24,9 +25,28 @@ apiClient.interceptors.response.use(
     return response.data;
   },
   (error) => {
-    if (error.response && error.response.status === 401) {
-      console.warn("Unauthorized access - possible expired token. Please sign in again.");
-      // Optional: trigger a custom event or state update to prompt re-login without hard crash
+    if (error.response) {
+      switch (error.response.status) {
+        case 401:
+          toast.error("Unauthorized. Please sign in again.");
+          console.warn("Unauthorized access - possible expired token. Please sign in again.");
+          break;
+        case 403:
+          toast.error("Forbidden. You don't have access to this resource.");
+          break;
+        case 422:
+          toast.error("Validation error. Please check your inputs.");
+          break;
+        case 500:
+          toast.error("Server error. We're working on it!");
+          break;
+        default:
+          toast.error(error.response.data?.error || "An error occurred.");
+      }
+    } else if (error.request) {
+      toast.error("Network error. Could not connect to servers.");
+    } else {
+      toast.error("An unexpected error occurred.");
     }
     return Promise.reject(error);
   }

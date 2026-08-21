@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { View, AppUser } from "../App";
 import { post } from "../lib/api";
 import AppShell from "../components/AppShell";
+import toast from 'react-hot-toast';
 
 interface Props {
   onNavigate: (v: View) => void;
@@ -241,6 +242,7 @@ export default function Roadmap({ onNavigate, user, onLogout }: Props) {
           }))
         }));
         setPhases(newPhases);
+        toast.success("Roadmap generated successfully!");
       } else if (Array.isArray(response)) {
           const newPhases = response.map((p: any, i: number) => ({
           id: `p${i + 1}`,
@@ -257,10 +259,11 @@ export default function Roadmap({ onNavigate, user, onLogout }: Props) {
           }))
         }));
         setPhases(newPhases);
+        toast.success("Roadmap generated successfully!");
       }
     } catch (e) {
       console.error("Failed to generate roadmap", e);
-      alert("Failed to generate roadmap. Please try again.");
+      toast.error("Failed to generate roadmap. Please try again.");
     } finally {
       setIsGenerating(false);
     }
@@ -268,7 +271,7 @@ export default function Roadmap({ onNavigate, user, onLogout }: Props) {
 
   return (
     <AppShell active="roadmap" onNavigate={onNavigate} user={user} onLogout={onLogout}>
-      <div className="p-8 max-w-[920px] pb-20 md:pb-8">
+      <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-[920px] pb-20 md:pb-8">
 
         {/* Header */}
         <div className="mb-8">

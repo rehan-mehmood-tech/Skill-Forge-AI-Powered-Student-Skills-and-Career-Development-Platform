@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { getAuthToken } from '../lib/auth';
+import toast from 'react-hot-toast';
 
 interface ResumeUploadProps {
   onUploadSuccess?: (data: any) => void;
@@ -80,16 +81,18 @@ export default function ResumeUpload({ onUploadSuccess }: ResumeUploadProps) {
 
       const data = await response.json();
       setResult(data);
+      toast.success("Resume parsed successfully!");
       if (onUploadSuccess) onUploadSuccess(data);
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred");
+      toast.error(err.message || "An unexpected error occurred");
     } finally {
       setIsUploading(false);
     }
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 bg-surface border border-border rounded-xl">
+    <div className="w-[95%] sm:w-full max-w-md mx-auto p-4 sm:p-6 bg-surface border border-border rounded-xl">
       <h3 className="font-sans font-semibold text-[18px] text-text-primary mb-2">Upload your Resume</h3>
       <p className="font-sans text-[13px] text-text-muted mb-4">
         We'll analyze your PDF resume to instantly extract your skills and experience.
@@ -110,6 +113,7 @@ export default function ResumeUpload({ onUploadSuccess }: ResumeUploadProps) {
           onChange={handleFileChange}
           accept="application/pdf"
           className="hidden"
+          disabled={isUploading}
         />
         
         {file ? (

@@ -95,7 +95,7 @@ function StatusBadge({ status }: { status: string }) {
 export default function Dashboard({ onNavigate, user, onLogout }: Props) {
   return (
     <AppShell active="dashboard" onNavigate={onNavigate} user={user} onLogout={onLogout}>
-      <div className="p-8 flex flex-col gap-6 max-w-[1100px] pb-20 md:pb-8">
+      <div className="px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6 max-w-[1100px] pb-20 md:pb-8">
 
         {/* ── Topbar ── */}
         <header className="flex items-start justify-between gap-4 flex-wrap">
@@ -123,7 +123,7 @@ export default function Dashboard({ onNavigate, user, onLogout }: Props) {
         </header>
 
         {/* ── Row 1: Readiness + Skill Matrix ── */}
-        <div className="grid gap-6" style={{ gridTemplateColumns: "1fr 1fr" }}>
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
 
           {/* Card A — Overall Readiness */}
           <Card>
@@ -183,7 +183,7 @@ export default function Dashboard({ onNavigate, user, onLogout }: Props) {
         </div>
 
         {/* ── Row 2: Roadmap Mini + Recent Assessments ── */}
-        <div className="grid gap-6" style={{ gridTemplateColumns: "1fr 1fr" }}>
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
 
           {/* Card C — Active Roadmap */}
           <Card>

@@ -19,6 +19,7 @@ interface Props {
 export default function PublicNavbar({ active, onNavigate, user, onLogin }: Props) {
   const [scrolled, setScrolled] = useState(false);
   const [auth,     setAuth]     = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 8);
@@ -38,8 +39,11 @@ export default function PublicNavbar({ active, onNavigate, user, onLogin }: Prop
           className="flex items-center gap-3 select-none cursor-pointer"
           onClick={() => onNavigate("landing")}
         >
-          <span className="font-sans font-semibold text-[13px] text-text-primary tracking-[0.1em] uppercase">
+          <span className="font-sans font-semibold text-[13px] text-text-primary tracking-[0.1em] uppercase hidden sm:inline">
             SkillForge
+          </span>
+          <span className="font-sans font-semibold text-[13px] text-text-primary tracking-[0.1em] uppercase sm:hidden">
+            SF
           </span>
           <span className="font-mono text-[11px] text-text-muted">[v1.0]</span>
           {user?.role === "student" && (
@@ -112,13 +116,38 @@ export default function PublicNavbar({ active, onNavigate, user, onLogin }: Prop
         </div>
 
         {/* Mobile */}
-        <button
-          onClick={() => user ? onNavigate("dashboard") : setAuth(true)}
-          className="md:hidden btn-cta h-8 px-3 rounded-lg bg-white text-black text-xs font-semibold cursor-pointer"
-        >
-          {user ? "Dashboard" : "Get Started"}
-        </button>
+        <div className="md:hidden flex items-center gap-3">
+          <button
+            onClick={() => user ? onNavigate("dashboard") : setAuth(true)}
+            className="btn-cta h-8 px-3 rounded-lg bg-white text-black text-xs font-semibold cursor-pointer"
+          >
+            {user ? "Dashboard" : "Get Started"}
+          </button>
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="text-text-primary text-lg cursor-pointer"
+          >
+            {menuOpen ? "✕" : "☰"}
+          </button>
+        </div>
       </nav>
+
+      {/* Mobile Menu Dropdown */}
+      {menuOpen && (
+        <div className="fixed top-[52px] inset-x-0 bg-surface border-b border-border z-40 flex flex-col p-4 gap-4 shadow-lg md:hidden">
+          {NAV_LINKS.map((link) => (
+            <button
+              key={link.label}
+              onClick={() => { onNavigate(link.view); setMenuOpen(false); }}
+              className={`font-sans text-[15px] text-left ${
+                active === link.view ? "text-text-primary font-semibold" : "text-text-secondary"
+              }`}
+            >
+              {link.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {auth && (
         <AuthModal

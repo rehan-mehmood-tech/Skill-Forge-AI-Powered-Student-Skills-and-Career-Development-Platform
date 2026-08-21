@@ -83,7 +83,7 @@ const DIFFICULTY_COLOR: Record<string, string> = {
 export default function AssessmentPicker({ onNavigate }: Props) {
   return (
     <AppShell active="assessments" onNavigate={onNavigate}>
-      <div className="p-8 max-w-[1100px] pb-20 md:pb-8">
+      <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-[1100px] pb-20 md:pb-8">
         {/* Header */}
         <div className="mb-8">
           <p className="font-mono text-[11px] text-text-muted uppercase tracking-widest mb-2">

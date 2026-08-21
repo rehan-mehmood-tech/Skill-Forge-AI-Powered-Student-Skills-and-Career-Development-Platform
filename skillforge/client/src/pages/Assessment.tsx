@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import type { View } from "../App";
 import { post } from "../lib/api";
+import toast from 'react-hot-toast';
 
 interface Props {
   onNavigate: (v: View) => void;
@@ -236,9 +237,11 @@ export default function Assessment({ onNavigate }: Props) {
 
       try {
         await post('/ai/analyze-skills', payload);
+        toast.success("Assessment submitted successfully!");
         onNavigate("results"); 
       } catch (err: any) {
         setError(err.message || "Failed to submit assessment");
+        toast.error(err.message || "Failed to submit assessment");
         setIsSubmitting(false);
       }
       return; 
