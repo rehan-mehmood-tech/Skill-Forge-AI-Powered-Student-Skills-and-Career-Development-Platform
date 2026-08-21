@@ -3,6 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const { RedisStore } = require('rate-limit-redis');
+const { Redis } = require('ioredis');
 
 const app = express();
 
@@ -10,18 +12,25 @@ const app = express();
 app.use(helmet());
 
 // CORS config
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'http://localhost:3000';
 app.use(cors({
-  origin: '*'
+  origin: ALLOWED_ORIGIN
 }));
 
 // Body parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Redis connection for rate limit
+const redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+
 // Rate limiting
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
+  store: new RedisStore({
+    sendCommand: (...args) => redisClient.call(...args),
+  }),
   message: { error: "Too many requests, please try again later." },
   standardHeaders: true,
   legacyHeaders: false,
@@ -39,10 +48,29 @@ app.get('/health', (req, res) => {
 
 // Port binding
 const PORT = process.env.PORT || 5000;
+let server;
 if (require.main === module) {
-  app.listen(PORT, () => {
+  server = app.listen(PORT, () => {
     console.log(`API Gateway running on port ${PORT}`);
   });
+
+  // Graceful shutdown
+  const gracefulShutdown = () => {
+    console.log('Received kill signal, shutting down gracefully');
+    server.close(() => {
+      console.log('Closed out remaining connections');
+      redisClient.quit();
+      process.exit(0);
+    });
+
+    setTimeout(() => {
+      console.error('Could not close connections in time, forcefully shutting down');
+      process.exit(1);
+    }, 10000);
+  };
+
+  process.on('SIGTERM', gracefulShutdown);
+  process.on('SIGINT', gracefulShutdown);
 }
 
 module.exports = app;

@@ -24,6 +24,16 @@ services:
       - skillforge-network
     depends_on:
       - ai-service
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - skillforge-network
 
   client:
     build:
@@ -38,3 +48,6 @@ services:
 networks:
   skillforge-network:
     driver: bridge
+
+volumes:
+  redis_data:

@@ -5,13 +5,20 @@ import os
 from dotenv import load_dotenv
 from starlette.status import HTTP_403_FORBIDDEN
 
+import logging
+
 load_dotenv()
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="SkillForge AI Service")
 
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5000").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -21,7 +28,11 @@ API_KEY_NAME = "X-API-Key"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
 def get_api_key(api_key_header: str = Security(api_key_header)):
-    expected_key = os.getenv("INTERNAL_API_KEY", "skillforge-secret-key")
+    expected_key = os.getenv("INTERNAL_API_KEY")
+    if not expected_key:
+        logger.error("INTERNAL_API_KEY environment variable is not set!")
+        raise HTTPException(status_code=500, detail="Server Configuration Error")
+        
     if api_key_header == expected_key:
         return api_key_header
     raise HTTPException(
@@ -38,9 +49,10 @@ from fastapi.responses import JSONResponse
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
+    logger.error(f"Internal AI Service Error: {str(exc)}")
     return JSONResponse(
         status_code=500,
-        content={"error": "Internal AI Service Error", "detail": str(exc)}
+        content={"error": "Internal AI Service Error", "detail": "An unexpected error occurred. Please try again later."}
     )
 
 @app.get("/health")

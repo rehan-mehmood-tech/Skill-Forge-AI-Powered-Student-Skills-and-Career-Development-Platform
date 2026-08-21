@@ -3,6 +3,7 @@ const axios = require('axios');
 const multer = require('multer');
 const FormData = require('form-data');
 const { verifySupabaseToken } = require('../middleware/auth');
+const { validate, chatAgentSchema, generateRoadmapSchema, analyzeSkillsSchema, ragQuerySchema } = require('../middleware/validate');
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -37,10 +38,10 @@ const forwardRequest = async (req, res, endpoint) => {
   }
 };
 
-router.post('/analyze-skills', (req, res) => forwardRequest(req, res, '/api/analyze-skills'));
-router.post('/generate-roadmap', (req, res) => forwardRequest(req, res, '/api/generate-roadmap'));
-router.post('/chat-agent', (req, res) => forwardRequest(req, res, '/api/chat-agent'));
-router.post('/rag-query', (req, res) => forwardRequest(req, res, '/api/rag-query'));
+router.post('/analyze-skills', validate(analyzeSkillsSchema), (req, res) => forwardRequest(req, res, '/api/analyze-skills'));
+router.post('/generate-roadmap', validate(generateRoadmapSchema), (req, res) => forwardRequest(req, res, '/api/generate-roadmap'));
+router.post('/chat-agent', validate(chatAgentSchema), (req, res) => forwardRequest(req, res, '/api/chat-agent'));
+router.post('/rag-query', validate(ragQuerySchema), (req, res) => forwardRequest(req, res, '/api/rag-query'));
 
 router.post('/upload-cv', upload.single('file'), async (req, res) => {
   if (!req.file) {
