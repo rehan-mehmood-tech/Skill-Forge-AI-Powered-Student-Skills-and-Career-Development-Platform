@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from typing import Optional, Dict, Any, List
 import json
 from langchain_core.messages import HumanMessage
@@ -9,10 +9,12 @@ from app.core.skill_gap_calculator import SkillGapCalculator
 from app.rag.retriever import KnowledgeBaseRetriever
 from app.agent.graph import app_graph
 from app.agent.tools import supabase
+from app.services.cv_parser import CVParser
 
 from app.schemas import AnalyzeSkillsRequest, GenerateRoadmapRequest, ChatAgentRequest, RagQueryRequest
 
 router = APIRouter(prefix="/api", tags=["core_api"])
+cv_parser_service = CVParser()
 
 
 @router.post("/analyze-skills")
@@ -92,3 +94,15 @@ async def rag_query(req: RagQueryRequest):
         return {"results": chunks}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/upload-cv")
+async def upload_cv(file: UploadFile = File(...), student_id: str = Form(...)):
+    if not file.filename.endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="Only PDF files are supported")
+    
+    try:
+        contents = await file.read()
+        result = cv_parser_service.parse_cv_bytes(contents, student_id)
+        return result.model_dump()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to process CV: {str(e)}")
