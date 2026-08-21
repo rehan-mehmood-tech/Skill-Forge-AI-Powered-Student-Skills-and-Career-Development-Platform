@@ -3,8 +3,8 @@ uvicorn[standard]==0.30.1
 pydantic==2.8.2
 langchain==0.2.14
 langgraph==0.2.4
-langchain-groq==0.1.9
-fastembed==0.3.1
+langchain-groq>=0.1.9
+fastembed>=0.5.0
 supabase==2.5.2
 pypdf==4.3.1
 python-dotenv==1.0.1
