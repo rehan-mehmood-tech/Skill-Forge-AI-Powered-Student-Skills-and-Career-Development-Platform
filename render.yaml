@@ -1,0 +1,43 @@
+services:
+  # FastAPI AI Microservice
+  - type: web
+    name: skillforge-ai-service
+    env: python
+    region: oregon
+    plan: free
+    rootDir: skillforge/ai-service
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: INTERNAL_API_KEY
+        value: "skillforge-secret-key-2026"
+      - key: GROQ_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+
+  # Express API Gateway
+  - type: web
+    name: skillforge-api-gateway
+    env: node
+    region: oregon
+    plan: free
+    rootDir: skillforge/api-gateway
+    buildCommand: "npm install"
+    startCommand: "node src/server.js"
+    envVars:
+      - key: PORT
+        value: "5000"
+      - key: INTERNAL_API_KEY
+        value: "skillforge-secret-key-2026"
+      - key: AI_SERVICE_URL
+        fromService:
+          name: skillforge-ai-service
+          type: web
+          property: host
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
