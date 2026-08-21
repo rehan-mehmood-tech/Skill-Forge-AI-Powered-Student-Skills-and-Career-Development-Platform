@@ -39,13 +39,18 @@ export default function PublicNavbar({ active, onNavigate, user, onLogin }: Prop
           className="flex items-center gap-3 select-none cursor-pointer"
           onClick={() => onNavigate("landing")}
         >
+          <svg className="w-5 h-5 text-text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z" fill="currentColor" stroke="none" />
+            <path d="M2 17l10 5 10-5M2 12l10 5 10-5" />
+            <path d="M12 12L12 22" />
+          </svg>
           <span className="font-sans font-semibold text-[13px] text-text-primary tracking-[0.1em] uppercase hidden sm:inline">
             SkillForge
           </span>
           <span className="font-sans font-semibold text-[13px] text-text-primary tracking-[0.1em] uppercase sm:hidden">
             SF
           </span>
-          <span className="font-mono text-[11px] text-text-muted">[v1.0]</span>
+          <span className="font-mono text-[11px] text-text-muted hidden sm:inline">[v1.0]</span>
           {user?.role === "student" && (
             <span className="hidden sm:inline-flex font-mono text-[10px] text-accent border border-accent rounded-md px-2 py-0.5 animate-fade-in">
               [Active Track: {user.targetRole}]

@@ -61,7 +61,9 @@ export default function AuthModal({
       const user = role === "student" ? { ...STUDENT_USER, name: fullName || "Student" } : { ...MENTOR_USER, name: fullName || "Mentor" };
       onLogin(user);
       onClose();
-      onNavigate(redirectTo ?? (role === "mentor" ? "admin" : "onboarding"));
+      if (redirectTo) {
+        onNavigate(redirectTo);
+      }
     }
   };
 

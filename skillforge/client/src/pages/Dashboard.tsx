@@ -1,5 +1,6 @@
 import type { View, AppUser } from "../App";
 import AppShell from "../components/AppShell";
+import { useAuth } from "../context/AuthContext";
 
 interface Props {
   onNavigate: (v: View) => void;
@@ -93,6 +94,14 @@ function StatusBadge({ status }: { status: string }) {
 /* ─── Page ───────────────────────────────────────────────── */
 
 export default function Dashboard({ onNavigate, user, onLogout }: Props) {
+  const { user: authUser, profile } = useAuth();
+  
+  const rawName = authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || user?.name || authUser?.email?.split('@')[0] || 'User';
+  const firstName = rawName.split(' ')[0];
+  const fullName = rawName;
+  const targetRole = profile?.target_role || "Software Engineer";
+  const readiness = profile?.overall_readiness != null ? profile.overall_readiness : 62;
+
   return (
     <AppShell active="dashboard" onNavigate={onNavigate} user={user} onLogout={onLogout}>
       <div className="px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6 max-w-[1100px] pb-20 md:pb-8">
@@ -100,18 +109,18 @@ export default function Dashboard({ onNavigate, user, onLogout }: Props) {
         {/* ── Topbar ── */}
         <header className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <p className="font-sans text-sm text-text-secondary leading-none">Welcome back, Aisha</p>
+            <p className="font-sans text-sm text-text-secondary leading-none">Welcome back, {firstName}</p>
             <h1 className="font-sans font-semibold text-xl text-text-primary mt-1 leading-none">
-              Aisha Khan
+              {fullName}
             </h1>
           </div>
           <div className="flex items-center gap-3 flex-wrap flex-shrink-0">
             <div className="flex items-center gap-2 h-9 px-3 rounded-lg bg-surface border border-border">
               <span className="font-sans font-medium text-[13px] text-text-primary whitespace-nowrap">
-                Backend Developer
+                {targetRole}
               </span>
               <span className="font-mono text-[11px] text-text-muted">↓</span>
-              <span className="font-mono text-[11px] text-warning whitespace-nowrap">[62% ready]</span>
+              <span className="font-mono text-[11px] text-warning whitespace-nowrap">[{readiness}% ready]</span>
             </div>
             <button
               onClick={() => onNavigate("assessments")}
@@ -129,15 +138,15 @@ export default function Dashboard({ onNavigate, user, onLogout }: Props) {
           <Card>
             <SectionLabel>Overall Readiness</SectionLabel>
             <span className="font-mono font-bold text-[56px] leading-none text-text-primary tabular-nums">
-              62%
+              {readiness}%
             </span>
             <p className="font-sans text-[13px] text-[#71717A] mt-1 mb-4 leading-none">
-              Backend Developer
+              {targetRole}
             </p>
             <div className="w-full bg-border" style={{ height: 4 }}>
-              <div className="h-full bg-text-primary" style={{ width: "62%" }} />
+              <div className="h-full bg-text-primary" style={{ width: `${readiness}%` }} />
             </div>
-            <p className="font-sans text-[12px] text-text-muted mt-2">38% gap to target role</p>
+            <p className="font-sans text-[12px] text-text-muted mt-2">{100 - readiness}% gap to target role</p>
           </Card>
 
           {/* Card B — Skill Matrix */}
@@ -190,7 +199,7 @@ export default function Dashboard({ onNavigate, user, onLogout }: Props) {
             <div className="flex items-start justify-between mb-4">
               <SectionLabel>Active Roadmap</SectionLabel>
               <span className="font-mono text-[10px] text-text-muted border border-border rounded-md px-2 py-0.5 bg-surface-hover whitespace-nowrap -mt-1">
-                [Backend Developer]
+                [{targetRole}]
               </span>
             </div>
 

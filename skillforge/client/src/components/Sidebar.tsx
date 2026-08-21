@@ -29,7 +29,15 @@ export default function Sidebar({ active, onNavigate, user, onLogout }: Props) {
       style={{ width: 240, minHeight: "100vh" }}
     >
       {/* Brand */}
-      <div className="px-5 flex items-center gap-2 mb-2">
+      <div 
+        className="px-5 flex items-center gap-2 mb-2 cursor-pointer select-none"
+        onClick={() => onNavigate("landing")}
+      >
+        <svg className="w-5 h-5 text-text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z" fill="currentColor" stroke="none" />
+          <path d="M2 17l10 5 10-5M2 12l10 5 10-5" />
+          <path d="M12 12L12 22" />
+        </svg>
         <span className="font-sans font-semibold text-[13px] text-text-primary tracking-[0.1em] uppercase">
           SkillForge
         </span>
