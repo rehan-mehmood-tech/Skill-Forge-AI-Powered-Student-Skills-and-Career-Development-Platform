@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 import { supabase } from "./lib/supabaseClient";
+import { useAuth } from "./context/AuthContext";
 import { STUDENT_USER, MENTOR_USER } from "./components/AuthModal";
 import Landing from "./pages/Landing";
 import Onboarding from "./pages/Onboarding";
@@ -68,6 +69,7 @@ function pathToView(path: string): View {
 
 export default function App() {
   const [view, setView] = useState<View>(() => pathToView(window.location.pathname));
+  const { user: authUser } = useAuth();
   const [user, setUser] = useState<AppUser | null>(null);
 
   useEffect(() => {
@@ -77,35 +79,21 @@ export default function App() {
     };
     window.addEventListener("popstate", handler);
     
-    // Auth Persistence
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (isMounted && session?.user) {
-        const metadata = session.user.user_metadata || {};
-        const isMentor = metadata.role === "mentor";
-        const baseUser = isMentor ? MENTOR_USER : STUDENT_USER;
-        setUser({ ...baseUser, name: metadata.full_name || metadata.name || baseUser.name });
-      }
-    });
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (isMounted) {
-        if (session?.user) {
-          const metadata = session.user.user_metadata || {};
-          const isMentor = metadata.role === "mentor";
-          const baseUser = isMentor ? MENTOR_USER : STUDENT_USER;
-          setUser({ ...baseUser, name: metadata.full_name || metadata.name || baseUser.name });
-        } else {
-          setUser(null);
-        }
-      }
-    });
+    // Auth Persistence from AuthContext
+    if (authUser) {
+      const metadata = authUser.user_metadata || {};
+      const isMentor = metadata.role === "mentor";
+      const baseUser = isMentor ? MENTOR_USER : STUDENT_USER;
+      setUser({ ...baseUser, name: metadata.full_name || metadata.name || baseUser.name });
+    } else {
+      setUser(null);
+    }
 
     return () => {
       isMounted = false;
       window.removeEventListener("popstate", handler);
-      authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [authUser]);
 
   function navigate(v: View) {
     const path = VIEW_TO_PATH[v] ?? "/";
