@@ -96,7 +96,33 @@ router.post('/rag-query', chatLimiter, validate(ragQuerySchema), (req, res) => f
 
 // New Routes for integration
 router.post('/questions', chatLimiter, (req, res) => forwardRequest(req, res, '/api/assessment/questions'));
-router.post('/generate', roadmapLimiter, (req, res) => forwardRequest(req, res, '/api/generate-roadmap'));
+router.post('/generate', roadmapLimiter, async (req, res) => {
+  try {
+    const payload = {
+      student_id: req.body.student_id || req.user?.id || 'temp-id',
+      target_role: req.body.target_role || 'Software Engineer',
+      timeframe_weeks: req.body.timeframe_weeks || 12,
+      experience_level: req.body.experience_level || 'Beginner',
+      answers: req.body.answers || []
+    };
+
+    const response = await axios.post(`${AI_SERVICE_URL}/roadmap/generate`, payload, {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-internal-key': INTERNAL_API_KEY,
+        'X-API-Key': INTERNAL_API_KEY
+      }
+    });
+
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    if (error.response) {
+      res.status(error.response.status).json(error.response.data);
+    } else {
+      res.status(502).json({ error: 'AI Service currently unreachable. Please retry.' });
+    }
+  }
+});
 
 router.post('/upload-cv', uploadLimiter, upload.single('file'), async (req, res) => {
   if (!req.file) {

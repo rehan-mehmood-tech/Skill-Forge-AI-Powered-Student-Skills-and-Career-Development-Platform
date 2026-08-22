@@ -51,10 +51,10 @@ function useBlink(ms = 530) {
 }
 
 const TRACKS = [
-  "Production Backend Engineer.",
-  "Applied AI & ML Specialist.",
-  "Cloud & DevOps Architect.",
-  "Full-Stack Systems Developer.",
+  "Production-Ready Engineer",
+  "Autonomous AI Architect",
+  "Scalable Systems Developer",
+  "Cloud Infrastructure Expert"
 ];
 
 function useTypewriter(tracks: string[], typeSpeed = 55, deleteSpeed = 28, holdMs = 2200) {
@@ -177,6 +177,8 @@ function TerminalCard({ title, lines, laser }: { title: string; lines: { c: stri
 function HeroSection({ onNavigate, user, onLogin }: { onNavigate: (v: View) => void; user: AppUser | null; onLogin: (u: AppUser) => void }) {
   const [auth,   setAuth]   = useState(false);
   const [authRedirect, setAuthRedirect] = useState<View | undefined>();
+  const displayedText = useTypewriter(TRACKS);
+  const blink = useBlink();
 
   const handleAuth = (redirectTo?: View) => {
     setAuthRedirect(redirectTo);
@@ -202,19 +204,24 @@ function HeroSection({ onNavigate, user, onLogin }: { onNavigate: (v: View) => v
             <span className="block font-sans font-bold text-[40px] md:text-[58px] text-text-primary tracking-[-0.025em] leading-[1.06]">
               Architect Your Engineering Career
             </span>
+            <span className="block font-sans font-bold text-[34px] md:text-[46px] text-text-secondary tracking-[-0.02em] leading-[1.1] mt-2">
+              Become a <span className="text-text-primary">{displayedText}</span>
+              <span className={blink ? "opacity-100" : "opacity-0"}>|</span>
+            </span>
           </h1>
         )}
 
         {/* Logged-in — personalized welcome */}
         {user && (
           <h1 className="mb-5 animate-fade-up delay-0">
-            <span className="block font-mono text-[12px] text-text-muted mb-1 uppercase tracking-widest">Welcome back</span>
+            <span className="block font-mono text-[12px] text-text-muted mb-1 uppercase tracking-widest">Welcome, {user.name || 'Engineer'}</span>
             <span className="block font-sans font-bold text-[40px] md:text-[58px] text-text-primary tracking-[-0.025em] leading-[1.06]">
-              {user.name}.
-            </span>
-            <span className="block font-sans font-bold text-[34px] md:text-[46px] text-text-secondary tracking-[-0.02em] leading-[1.1]">
               Your sprint toward{" "}
               <span className="text-text-primary">{user.targetRole}.</span>
+            </span>
+            <span className="block font-sans font-bold text-[34px] md:text-[46px] text-text-secondary tracking-[-0.02em] leading-[1.1] mt-2">
+              Building a <span className="text-text-primary">{displayedText}</span>
+              <span className={blink ? "opacity-100" : "opacity-0"}>|</span>
             </span>
           </h1>
         )}

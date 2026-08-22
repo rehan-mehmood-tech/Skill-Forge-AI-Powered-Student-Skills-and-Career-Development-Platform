@@ -62,7 +62,6 @@ async def generate_roadmap_endpoint(req: GenerateRoadmapRequest):
             total = len(req.answers)
             overall_readiness = round((correct_count / total) * 100) if total > 0 else 0
             
-            # Simple heuristic mapping for the prototype
             skill_vector = {
                 "python": min(1.0, (overall_readiness / 100.0) + 0.1),
                 "system_arch": max(0.0, (overall_readiness / 100.0) - 0.2),
@@ -80,16 +79,94 @@ async def generate_roadmap_endpoint(req: GenerateRoadmapRequest):
                 "skill_vector": skill_vector,
                 "overall_readiness": overall_readiness,
                 "target_role": req.target_role,
-                "active_phase": "Phase 01: Foundations"
+                "active_phase": "Phase 1: Foundations"
             }).eq("id", req.student_id).execute()
+            
         gap_report = SkillGapCalculator.identify_gaps(skill_vector, req.target_role)
         
-        resources_res = supabase.table("learning_resources").select("*").eq("is_active", True).execute()
-        available_resources = resources_res.data if resources_res.data else []
+        # Groq LLM Roadmap Generation
+        from langchain_groq import ChatGroq
+        from langchain_core.messages import SystemMessage, HumanMessage
+        import os
         
-        recommended_topics = RoadmapGenerator.recommend_topics(gap_report, available_resources)
-        phases = RoadmapGenerator.build_phases(gap_report, recommended_topics)
+        llm = ChatGroq(
+            model_name="openai/gpt-oss-20b",
+            temperature=0.2,
+            api_key=os.getenv("GROQ_API_KEY")
+        )
         
+        sys_prompt = f"""You are an expert career advisor and technical architect.
+Generate a structured 12-week study roadmap for a student targeting the role of '{req.target_role}' with experience level '{req.experience_level}'.
+The roadmap MUST consist of exactly 3 phases:
+- Phase 1: Foundations (Weeks 1-4)
+- Phase 2: Core Architecture (Weeks 5-8)
+- Phase 3: Production/Scale (Weeks 9-12)
+
+Return ONLY a valid JSON array of 3 phase objects. Do not include markdown code blocks, backticks, or any conversational text.
+Each phase object must have the exact following structure:
+{{
+  "phase_number": <integer 1-3>,
+  "title": "Phase title",
+  "duration_weeks": 4,
+  "milestones": ["Milestone 1", "Milestone 2", "Milestone 3"],
+  "deliverable_project": "A project description that demonstrates capability"
+}}"""
+
+        try:
+            response = llm.invoke([
+                SystemMessage(content=sys_prompt), 
+                HumanMessage(content="Generate the 12-week roadmap JSON now.")
+            ])
+            content = response.content.strip()
+            if content.startswith("```json"):
+                content = content[7:]
+            if content.startswith("```"):
+                content = content[3:]
+            if content.endswith("```"):
+                content = content[:-3]
+            phases = json.loads(content.strip())
+            
+            # Ensure it is a list of 3 items
+            if not isinstance(phases, list) or len(phases) != 3:
+                raise ValueError("Invalid phase format from LLM")
+        except Exception as llm_err:
+            # Safe fallback
+            phases = [
+                {
+                    "phase_number": 1,
+                    "title": "Phase 1: Foundations",
+                    "duration_weeks": 4,
+                    "milestones": [
+                        f"Master core language syntax and tooling for {req.target_role}",
+                        "Implement basic data structures and algorithms",
+                        "Configure local development environment and version control"
+                    ],
+                    "deliverable_project": f"Command-line script demonstrating {req.target_role} syntax and core features"
+                },
+                {
+                    "phase_number": 2,
+                    "title": "Phase 2: Core Architecture",
+                    "duration_weeks": 4,
+                    "milestones": [
+                        "Design database schemas and write efficient queries",
+                        "Implement RESTful API endpoints and authentication",
+                        "Learn concurrency patterns and async task processing"
+                    ],
+                    "deliverable_project": f"Monolithic REST API with relational database and JWT authentication"
+                },
+                {
+                    "phase_number": 3,
+                    "title": "Phase 3: Production/Scale",
+                    "duration_weeks": 4,
+                    "milestones": [
+                        "Containerize services with Docker and run with docker-compose",
+                        "Set up CI/CD pipeline for automated testing and deployment",
+                        "Configure basic caching (e.g. Redis) and log metrics"
+                    ],
+                    "deliverable_project": f"Containerized microservice deployed to production with CI/CD and basic monitoring"
+                }
+            ]
+            
         roadmap_payload = RoadmapGenerator.generate_roadmap_payload(req.student_id, req.target_role, gap_report, phases)
         
         insert_res = supabase.table("roadmaps").insert(roadmap_payload).execute()

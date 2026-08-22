@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { post } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
 
 interface Message {
   id: string;
@@ -19,25 +20,14 @@ const STARTER_PROMPTS = [
 const INITIAL_MESSAGES: Message[] = [
   {
     id: "1",
-    role: "user",
-    content: "What should I focus on first to become a backend developer?",
-  },
-  {
-    id: "2",
     role: "assistant",
-    content:
-      "Based on your skill vector, DevOps is your most critical gap at 0.12 — well below the 0.50 threshold for Backend Developer. I'd recommend starting there before AI/ML.\n\nYour Python score (0.79) is solid and only needs light reinforcement.",
-    toolTrace: [
-      "> invoking analyze_student_skills...",
-      "> invoking calculate_gap (target: Backend Developer)...",
-      "> invoking search_knowledge_base (query: docker fundamentals)...",
-      "✓ 3 tools completed in 1.2s",
-    ],
-    citations: ["[↗ Backend Developer Roadmap 2026]", "[↗ Docker Fundamentals — FreeCodeCamp]"],
+    content: "Hello! I'm your SkillForge Career Copilot. Ask me anything about engineering roadmaps, tech stacks, or interview preparation.",
   },
 ];
 
 export default function FloatingAgentWidget() {
+  const { profile } = useAuth();
+
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [input, setInput] = useState("");
@@ -69,7 +59,8 @@ export default function FloatingAgentWidget() {
       const res: any = await post('/api/ai/chat-agent', { 
         message: text.trim(), 
         session_id: sessionIdRef.current,
-        target_role: "Backend Developer",
+        target_role: profile?.target_role || "Backend Developer",
+        experience_level: profile?.metadata?.experience_years != null ? `${profile.metadata.experience_years} yrs` : "Junior (0–2 yrs)",
         conversation_history: history
       });
 

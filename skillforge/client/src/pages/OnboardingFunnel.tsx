@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { View, AppUser } from "../App";
 import AuthModal from "../components/AuthModal";
 import { post } from "../lib/api";
 import toast from 'react-hot-toast';
 import { useAuth } from "../context/AuthContext";
+import { getCuratedQuestions } from "../lib/questionBank";
 
 interface Props {
   onNavigate: (v: View) => void;
@@ -91,8 +92,46 @@ export default function OnboardingFunnel({ onNavigate, onLogin }: Props) {
   const [generatingRoadmap, setGeneratingRoadmap] = useState(false);
 
   // Resume State
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    uploadFile(file);
+  };
+
+  const uploadFile = async (file: File) => {
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("student_id", authUser?.id || "temp-id");
+
+    try {
+      const res: any = await post('/api/ai/upload-cv', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      toast.success("Resume parsed successfully!");
+      setUploadedFile(file.name);
+      if (res && res.extracted_skills) {
+        setTechStack(res.extracted_skills);
+      }
+      if (res && res.target_domains && res.target_domains.length > 0) {
+        const matched = DOMAINS.find(d => res.target_domains.some((td: string) => td.toLowerCase().includes(d.id.toLowerCase()) || d.label.toLowerCase().includes(td.toLowerCase())));
+        if (matched) setDomain(matched.id);
+      }
+      setStep(5);
+    } catch (err) {
+      console.error("Failed to parse resume", err);
+      toast.error("Failed to parse resume. Please build step-by-step.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   // Auth State (Guard for Step 7)
   const [authRequired, setAuthRequired] = useState(false);
@@ -113,10 +152,10 @@ export default function OnboardingFunnel({ onNavigate, onLogin }: Props) {
       setLoadingQuestions(true);
       try {
         const res = await post('/api/assessment/questions', { domain, sub });
-        setQuestions(res.questions || fallbackQuestions(domain, sub));
+        setQuestions(res.questions && res.questions.length === 25 ? res.questions : getCuratedQuestions(domain));
       } catch (err) {
         console.error("Failed to fetch questions, using fallback", err);
-        setQuestions(fallbackQuestions(domain, sub));
+        setQuestions(getCuratedQuestions(domain));
       } finally {
         setLoadingQuestions(false);
         setStep(6);
@@ -145,9 +184,13 @@ export default function OnboardingFunnel({ onNavigate, onLogin }: Props) {
       const res = await post('/api/roadmap/generate', { 
         student_id: authUser?.id || "temp-id",
         target_role: sub || domain,
-        weak_skills: techStack.slice(0, 3), // just an example of what to pass
+        weak_skills: techStack.slice(0, 3), 
         experience_level: level,
-        answers: mcqAnswers
+        answers: questions.map((q, idx) => ({
+          questionId: idx.toString(),
+          userAnswer: mcqAnswers[idx],
+          isCorrect: mcqAnswers[idx] === q.correctIndex
+        }))
       });
       toast.success("Roadmap generated successfully!");
       onNavigate("dashboard");
@@ -178,20 +221,34 @@ export default function OnboardingFunnel({ onNavigate, onLogin }: Props) {
             <p className="font-sans text-sm text-text-secondary mb-8 text-center">
               Let us parse your existing resume to speed up the process.
             </p>
+            <input
+              type="file"
+              accept=".pdf"
+              ref={fileInputRef}
+              onChange={handleFileSelect}
+              style={{ display: "none" }}
+            />
             <div
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
               onDrop={(e) => {
                 e.preventDefault();
                 setDragOver(false);
-                if (e.dataTransfer.files[0]) setUploadedFile(e.dataTransfer.files[0].name);
+                if (e.dataTransfer.files[0]) {
+                  uploadFile(e.dataTransfer.files[0]);
+                }
               }}
-              onClick={() => setUploadedFile("parsed_resume.pdf")}
+              onClick={() => fileInputRef.current?.click()}
               className={`w-full p-12 border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-colors ${
                 uploadedFile ? "border-success bg-surface" : dragOver ? "border-text-secondary bg-surface-hover" : "border-border bg-surface"
-              }`}
+              } ${uploading ? "opacity-50 pointer-events-none" : ""}`}
             >
-              {uploadedFile ? (
+              {uploading ? (
+                <div className="flex flex-col items-center justify-center">
+                  <div className="w-8 h-8 border-4 border-text-muted border-t-text-primary rounded-full animate-spin mb-3" />
+                  <p className="font-sans text-sm text-text-secondary">Analyzing resume skills...</p>
+                </div>
+              ) : uploadedFile ? (
                 <>
                   <span className="text-success text-2xl mb-2">✓</span>
                   <p className="font-sans text-sm font-medium">{uploadedFile}</p>
@@ -199,7 +256,7 @@ export default function OnboardingFunnel({ onNavigate, onLogin }: Props) {
               ) : (
                 <>
                   <span className="text-text-muted text-2xl mb-2">📄</span>
-                  <p className="font-sans text-sm text-text-muted">Drag & drop or click to upload</p>
+                  <p className="font-sans text-sm text-text-muted">Drag & drop or click to upload PDF</p>
                 </>
               )}
             </div>
@@ -399,17 +456,21 @@ export default function OnboardingFunnel({ onNavigate, onLogin }: Props) {
         );
 
       case 7:
-        // Final Results
+        // Calculate dynamic score
+        const correctCount = questions.reduce((acc, q, idx) => acc + (mcqAnswers[idx] === q.correctIndex ? 1 : 0), 0);
+        const score = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 72;
         return (
           <div className="max-w-3xl mx-auto mt-10 animate-fade-in">
             <h2 className="font-sans font-bold text-3xl mb-8 text-center text-text-primary">Audit Results</h2>
             <div className="bg-surface border border-border rounded-xl p-8 flex flex-col items-center">
               <div className="w-32 h-32 rounded-full border-4 border-success flex items-center justify-center mb-6">
-                <span className="font-sans font-bold text-4xl text-success">72%</span>
+                <span className="font-sans font-bold text-4xl text-success">{score}%</span>
               </div>
               <h3 className="font-sans font-medium text-xl mb-2">Market Ready for {sub}</h3>
               <p className="font-sans text-sm text-text-secondary text-center max-w-md">
-                You have strong fundamentals, but critical gaps in system architecture and cloud infrastructure.
+                {score >= 70 
+                  ? "You have strong fundamentals. Let's build your custom roadmap to bridge the remaining gaps."
+                  : "You have several critical gaps. We will construct a detailed roadmap to get you up to speed."}
               </p>
             </div>
             
