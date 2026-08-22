@@ -70,6 +70,10 @@ router.post('/generate-roadmap', roadmapLimiter, validate(generateRoadmapSchema)
 router.post('/chat-agent', chatLimiter, validate(chatAgentSchema), (req, res) => forwardRequest(req, res, '/api/chat-agent'));
 router.post('/rag-query', chatLimiter, validate(ragQuerySchema), (req, res) => forwardRequest(req, res, '/api/rag-query'));
 
+// New Routes for integration
+router.post('/questions', chatLimiter, (req, res) => forwardRequest(req, res, '/api/assessment/questions'));
+router.post('/generate', roadmapLimiter, (req, res) => forwardRequest(req, res, '/api/generate-roadmap'));
+
 router.post('/upload-cv', uploadLimiter, upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "No file uploaded" });

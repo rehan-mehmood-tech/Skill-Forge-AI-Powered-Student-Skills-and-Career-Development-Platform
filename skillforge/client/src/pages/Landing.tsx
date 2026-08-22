@@ -180,7 +180,7 @@ function HeroSection({ onNavigate, user, onLogin }: { onNavigate: (v: View) => v
   const track  = useTypewriter(TRACKS);
   const cursor = useBlink(530);
 
-  const handleAuth = (redirectTo: View) => {
+  const handleAuth = (redirectTo?: View) => {
     setAuthRedirect(redirectTo);
     setAuth(true);
   };
@@ -234,8 +234,8 @@ function HeroSection({ onNavigate, user, onLogin }: { onNavigate: (v: View) => v
         <div className="mt-7 flex flex-wrap items-center gap-3 animate-fade-up delay-150">
           {user ? (
             <>
-              <button onClick={() => onNavigate("assessment")} className="btn-cta h-10 px-6 rounded-lg bg-white text-black text-[13px] font-semibold hover:bg-zinc-100 cursor-pointer">
-                Resume {user.activePhase} →
+              <button onClick={() => onNavigate("onboarding")} className="btn-cta h-10 px-6 rounded-lg bg-white text-black text-[13px] font-semibold hover:bg-zinc-100 cursor-pointer">
+                Audit Your Skillset →
               </button>
               <button onClick={() => onNavigate("dashboard")} className="btn-cta h-10 px-5 rounded-lg border border-border bg-surface text-text-secondary hover:border-text-muted hover:bg-surface-hover hover:text-text-primary text-[13px] font-medium cursor-pointer">
                 Open Dashboard
@@ -243,7 +243,7 @@ function HeroSection({ onNavigate, user, onLogin }: { onNavigate: (v: View) => v
             </>
           ) : (
             <>
-              <button onClick={() => handleAuth("assessment")} className="btn-cta h-10 px-6 rounded-lg bg-white text-black text-[13px] font-semibold hover:bg-zinc-100 cursor-pointer">
+              <button onClick={() => handleAuth("landing")} className="btn-cta h-10 px-6 rounded-lg bg-white text-black text-[13px] font-semibold hover:bg-zinc-100 cursor-pointer">
                 Audit Your Skillset →
               </button>
               <button onClick={() => handleAuth("dashboard")} className="btn-cta h-10 px-5 rounded-lg border border-border bg-surface text-text-secondary hover:border-text-muted hover:bg-surface-hover hover:text-text-primary text-[13px] font-medium cursor-pointer">
@@ -650,7 +650,7 @@ function FinalCTA({ onNavigate, user, onLogin }: { onNavigate: (v: View) => void
   const [auth, setAuth] = useState(false);
   const [authRedirect, setAuthRedirect] = useState<View | undefined>();
 
-  const handleAuth = (redirectTo: View) => {
+  const handleAuth = (redirectTo?: View) => {
     setAuthRedirect(redirectTo);
     setAuth(true);
   };
@@ -674,7 +674,7 @@ function FinalCTA({ onNavigate, user, onLogin }: { onNavigate: (v: View) => void
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <button
-            onClick={() => user ? onNavigate("assessment") : handleAuth("assessment")}
+            onClick={() => user ? onNavigate("onboarding") : handleAuth("landing")}
             className="btn-cta w-full sm:w-auto h-11 px-8 rounded-lg bg-white text-black text-[13px] font-semibold hover:bg-zinc-100 cursor-pointer"
           >
             {user ? `Resume ${user.activePhase} →` : "Audit My Skillset — Free →"}

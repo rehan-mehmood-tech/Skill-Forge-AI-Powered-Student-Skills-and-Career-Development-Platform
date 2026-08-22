@@ -49,10 +49,11 @@ const TECH_STACKS: Record<string, string[]> = {
   game:   ["C#", "C++", "Unity", "Unreal Engine", "Blender", "OpenGL"],
 };
 
-// Dummy 25 Questions for mock
-const generateQuestions = (domain: string, sub: string) => {
+// We will fetch these from the backend instead.
+// Fallback if backend fails
+const fallbackQuestions = (domain: string, sub: string) => {
   return Array.from({ length: 25 }).map((_, i) => ({
-    text: `Sample technical question ${i + 1} for ${sub} (${domain}). Which of the following is correct?`,
+    text: `Fallback question ${i + 1} for ${sub} (${domain}). Which of the following is correct?`,
     options: [
       { label: "A", text: "Option A" },
       { label: "B", text: "Option B" },
@@ -84,6 +85,9 @@ export default function OnboardingFunnel({ onNavigate, onLogin }: Props) {
     return a ? JSON.parse(a) : new Array(25).fill(-1);
   });
   const [currentQ, setCurrentQ] = useState(0);
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
+  const [generatingRoadmap, setGeneratingRoadmap] = useState(false);
 
   // Resume State
   const [dragOver, setDragOver] = useState(false);
@@ -101,7 +105,22 @@ export default function OnboardingFunnel({ onNavigate, onLogin }: Props) {
     localStorage.setItem("ob_answers", JSON.stringify(mcqAnswers));
   }, [step, domain, level, sub, techStack, mcqAnswers]);
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    if (step === 5) {
+      // About to enter Step 6, fetch questions
+      setLoadingQuestions(true);
+      try {
+        const res = await post('/api/assessment/questions', { domain, sub });
+        setQuestions(res.questions || fallbackQuestions(domain, sub));
+      } catch (err) {
+        console.error("Failed to fetch questions, using fallback", err);
+        setQuestions(fallbackQuestions(domain, sub));
+      } finally {
+        setLoadingQuestions(false);
+        setStep(6);
+      }
+      return;
+    }
     if (step === 6) {
       setAuthRequired(true); // show modal before proceeding to step 7
       return;
@@ -115,9 +134,24 @@ export default function OnboardingFunnel({ onNavigate, onLogin }: Props) {
     setStep(7);
   };
 
-  const handleFinish = () => {
-    // Generate Roadmap
-    onNavigate("dashboard");
+  const handleFinish = async () => {
+    setGeneratingRoadmap(true);
+    try {
+      // Actually hit the backend to generate the roadmap
+      const res = await post('/api/roadmap/generate', { 
+        student_id: (window as any).currentUser?.id || "temp-id",
+        target_role: sub || domain,
+        weak_skills: techStack.slice(0, 3), // just an example of what to pass
+        experience_level: level
+      });
+      toast.success("Roadmap generated successfully!");
+      onNavigate("dashboard");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to generate roadmap. Please try again.");
+    } finally {
+      setGeneratingRoadmap(false);
+    }
   };
 
   const canProceed = () => {
@@ -283,8 +317,17 @@ export default function OnboardingFunnel({ onNavigate, onLogin }: Props) {
         );
 
       case 6:
-        const qs = generateQuestions(domain, sub);
-        const q = qs[currentQ];
+        if (loadingQuestions || questions.length === 0) {
+          return (
+            <div className="max-w-2xl mx-auto mt-20 flex flex-col items-center">
+              <div className="w-10 h-10 border-4 border-text-muted border-t-text-primary rounded-full animate-spin mb-4" />
+              <p className="font-sans text-sm text-text-secondary">Generating dynamic assessment for {sub}...</p>
+            </div>
+          );
+        }
+        const q = questions[currentQ];
+        if (!q) return null;
+        
         return (
           <div className="max-w-2xl mx-auto mt-10">
             <div className="flex items-center justify-between mb-4">
@@ -385,9 +428,10 @@ export default function OnboardingFunnel({ onNavigate, onLogin }: Props) {
             <div className="mt-10 flex justify-center">
               <button
                 onClick={handleFinish}
-                className="btn-cta h-12 px-8 rounded-lg bg-white text-black font-bold text-[15px] hover:bg-zinc-100 cursor-pointer"
+                disabled={generatingRoadmap}
+                className="btn-cta h-12 px-8 rounded-lg bg-white text-black font-bold text-[15px] hover:bg-zinc-100 cursor-pointer disabled:opacity-50"
               >
-                Generate 12-Week Roadmap →
+                {generatingRoadmap ? "Generating Roadmap..." : "Generate 12-Week Roadmap →"}
               </button>
             </div>
           </div>

@@ -11,7 +11,13 @@ from app.agent.graph import app_graph
 from app.agent.tools import supabase
 from app.services.cv_parser import CVParser
 
+from pydantic import BaseModel
 from app.schemas import AnalyzeSkillsRequest, GenerateRoadmapRequest, ChatAgentRequest, RagQueryRequest
+
+class AssessmentQuestionsRequest(BaseModel):
+    domain: str
+    sub: str
+    student_id: Optional[str] = None
 
 router = APIRouter(prefix="/api", tags=["core_api"])
 cv_parser_service = CVParser()
@@ -28,6 +34,32 @@ async def analyze_skills(req: AnalyzeSkillsRequest):
         # In a real scenario we'd use req.scores to update skill vector
         # This just returns the current vector
         return {"student_id": req.student_id, "skill_vector": skill_vector}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/assessment/questions")
+async def generate_assessment_questions(req: AssessmentQuestionsRequest):
+    try:
+        # For now, generate the questions directly in python to act as the backend API
+        # We can simulate the 25-MCQ dynamic logic here
+        import random
+        
+        questions = []
+        for i in range(25):
+            difficulty = "Easy" if i < 8 else ("Medium" if i < 18 else "Hard")
+            questions.append({
+                "text": f"Sample dynamic technical question {i + 1} for {req.sub} ({req.domain}). Which of the following is correct?",
+                "options": [
+                    {"label": "A", "text": "Option A - dynamic"},
+                    {"label": "B", "text": "Option B - dynamic"},
+                    {"label": "C", "text": "Option C - dynamic"},
+                    {"label": "D", "text": "Option D - dynamic"},
+                ],
+                "correctIndex": random.randint(0, 3),
+                "difficulty": difficulty
+            })
+            
+        return {"questions": questions}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

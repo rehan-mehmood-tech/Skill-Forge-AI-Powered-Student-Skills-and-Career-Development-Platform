@@ -59,6 +59,10 @@ app.use(apiLimiter);
 const aiProxyRouter = require('./routes/aiProxy');
 app.use('/api/ai', aiProxyRouter);
 
+// New Routes for Assessment & Roadmap
+app.use('/api/assessment', aiProxyRouter); // Map to the same proxy for now, we'll handle inside
+app.use('/api/roadmap', aiProxyRouter);
+
 // Health Endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ 
