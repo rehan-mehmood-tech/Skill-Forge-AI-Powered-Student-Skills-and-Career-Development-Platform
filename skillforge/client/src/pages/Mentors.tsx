@@ -7,6 +7,7 @@ interface Props {
   onNavigate: (v: View) => void;
   user:       AppUser | null;
   onLogin:    (u: AppUser) => void;
+  onLogout?:  () => void;
 }
 
 const CAPABILITIES = [
@@ -103,18 +104,14 @@ function CohortPreview({ rows }: { rows: typeof CAPABILITIES[0]["preview"] }) {
   );
 }
 
-export default function Mentors({ onNavigate, user, onLogin }: Props) {
-  const [auth,    setAuth]    = useState(false);
-  const [authFor, setAuthFor] = useState<"apply" | "signin">("signin");
+export default function Mentors({ onNavigate, user, onLogin, onLogout }: Props) {
+  const [auth, setAuth] = useState<{ open: boolean; tab: "signin" | "apply" }>({ open: false, tab: "signin" });
 
-  function openAuth(mode: "apply" | "signin") {
-    setAuthFor(mode);
-    setAuth(true);
-  }
+  const openAuth = (tab: "signin" | "apply") => setAuth({ open: true, tab });
 
   return (
-    <div className="min-h-screen bg-canvas text-text-primary">
-      <PublicNavbar active="mentors" onNavigate={onNavigate} user={user} onLogin={onLogin} />
+    <div className="min-h-screen bg-canvas text-text-primary overflow-x-hidden">
+      <PublicNavbar active="mentors" onNavigate={onNavigate} user={user} onLogin={onLogin} onLogout={onLogout} />
 
       {/* Hero */}
       <div className="pt-[88px] pb-14 px-6 md:px-10 max-w-[1080px] mx-auto">

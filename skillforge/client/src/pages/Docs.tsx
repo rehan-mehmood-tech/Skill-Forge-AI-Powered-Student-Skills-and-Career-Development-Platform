@@ -6,6 +6,7 @@ interface Props {
   onNavigate: (v: View) => void;
   user:       AppUser | null;
   onLogin:    (u: AppUser) => void;
+  onLogout?:  () => void;
 }
 
 const SECTIONS = [
@@ -74,7 +75,7 @@ export default function Docs({ onNavigate, user, onLogin }: Props) {
 
   return (
     <div className="min-h-screen bg-canvas text-text-primary">
-      <PublicNavbar active="docs" onNavigate={onNavigate} user={user} onLogin={onLogin} />
+      <PublicNavbar active="docs" onNavigate={onNavigate} user={user} onLogin={onLogin} onLogout={onLogout} />
 
       <div className="pt-[52px] flex max-w-[1200px] mx-auto">
 

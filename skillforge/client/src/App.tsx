@@ -4,10 +4,9 @@ import { supabase } from "./lib/supabaseClient";
 import { useAuth } from "./context/AuthContext";
 import { STUDENT_USER, MENTOR_USER } from "./components/AuthModal";
 import Landing from "./pages/Landing";
-import Onboarding from "./pages/Onboarding";
+import OnboardingFunnel from "./pages/OnboardingFunnel";
 import Dashboard from "./pages/Dashboard";
 import AssessmentPicker from "./pages/AssessmentPicker";
-import Assessment from "./pages/Assessment";
 import AssessmentResults from "./pages/AssessmentResults";
 import Roadmap from "./pages/Roadmap";
 import Profile from "./pages/Profile";
@@ -69,7 +68,7 @@ function pathToView(path: string): View {
 
 export default function App() {
   const [view, setView] = useState<View>(() => pathToView(window.location.pathname));
-  const { user: authUser, profile, isLoading } = useAuth();
+  const { user: authUser, profile, isLoading, logout: authLogout } = useAuth();
   const [user, setUser] = useState<AppUser | null>(null);
 
   useEffect(() => {
@@ -112,8 +111,12 @@ export default function App() {
   }
 
   const login    = (u: AppUser) => setUser(u);
-  const logout   = () => setUser(null);
-  const publicProps = { onNavigate: navigate, user, onLogin: login };
+  const logout   = async () => {
+    await authLogout();
+    setUser(null);
+    navigate("landing");
+  };
+  const publicProps = { onNavigate: navigate, user, onLogin: login, onLogout: logout };
   const authProps   = { onNavigate: navigate, user, onLogout: logout };
 
   const renderView = () => {
@@ -123,9 +126,8 @@ export default function App() {
       case "curriculum":  return <Curriculum  {...publicProps} />;
       case "mentors":     return <Mentors     {...publicProps} />;
       case "docs":        return <Docs        {...publicProps} />;
-      case "onboarding":  return <Onboarding  onNavigate={navigate} onLogin={login} />;
+      case "onboarding":  return <OnboardingFunnel onNavigate={navigate} onLogin={login} />;
       case "assessments": return <AssessmentPicker onNavigate={navigate} />;
-      case "assessment":  return <Assessment  onNavigate={navigate} />;
       case "results":     return <AssessmentResults onNavigate={navigate} />;
       case "roadmap":     return <Roadmap     {...authProps} />;
       case "profile":     return <Profile     {...authProps} />;

@@ -699,14 +699,15 @@ function FinalCTA({ onNavigate, user, onLogin }: { onNavigate: (v: View) => void
    ROOT
 ══════════════════════════════════════════════════════════ */
 
-export default function Landing({ onNavigate, user, onLogin }: {
+export default function Landing({ onNavigate, user, onLogin, onLogout }: {
   onNavigate: (v: View) => void;
   user:       AppUser | null;
   onLogin:    (u: AppUser) => void;
+  onLogout?:  () => void;
 }) {
   return (
     <div className="min-h-screen bg-canvas text-text-primary overflow-x-hidden">
-      <PublicNavbar active="landing" onNavigate={onNavigate} user={user} onLogin={onLogin} />
+      <PublicNavbar active="landing" onNavigate={onNavigate} user={user} onLogin={onLogin} onLogout={onLogout} />
 
       <main>
         <HeroSection onNavigate={onNavigate} user={user} onLogin={onLogin} />

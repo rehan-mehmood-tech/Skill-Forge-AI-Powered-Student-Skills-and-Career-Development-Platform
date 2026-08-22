@@ -14,9 +14,10 @@ interface Props {
   onNavigate: (v: View) => void;
   user:       AppUser | null;
   onLogin:    (u: AppUser) => void;
+  onLogout?:  () => void;
 }
 
-export default function PublicNavbar({ active, onNavigate, user, onLogin }: Props) {
+export default function PublicNavbar({ active, onNavigate, user, onLogin, onLogout }: Props) {
   const [scrolled, setScrolled] = useState(false);
   const [auth,     setAuth]     = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -101,6 +102,14 @@ export default function PublicNavbar({ active, onNavigate, user, onLogin }: Prop
               >
                 Dashboard →
               </button>
+              {onLogout && (
+                <button
+                  onClick={onLogout}
+                  className="btn-cta h-8 px-4 rounded-lg border border-border bg-transparent text-text-secondary hover:border-text-muted hover:text-danger text-[13px] font-medium cursor-pointer"
+                >
+                  Logout
+                </button>
+              )}
             </>
           ) : (
             <>
@@ -128,6 +137,14 @@ export default function PublicNavbar({ active, onNavigate, user, onLogin }: Prop
           >
             {user ? "Dashboard" : "Get Started"}
           </button>
+          {user && onLogout && (
+            <button
+              onClick={onLogout}
+              className="text-text-secondary hover:text-danger text-xs font-medium cursor-pointer ml-2"
+            >
+              Logout
+            </button>
+          )}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="text-text-primary text-lg cursor-pointer"

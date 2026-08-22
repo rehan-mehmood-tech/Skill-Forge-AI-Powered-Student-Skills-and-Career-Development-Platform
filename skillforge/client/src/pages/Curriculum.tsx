@@ -177,7 +177,7 @@ function DomainCard({ domain, onNavigate, user, onLogin }: {
   );
 }
 
-export default function Curriculum({ onNavigate, user, onLogin }: Props) {
+export default function Curriculum({ onNavigate, user, onLogin, onLogout }: Props) {
   const [filter, setFilter] = useState<"all" | "beginner" | "intermediate" | "advanced">("all");
 
   const filtered = filter === "all" ? DOMAINS :
@@ -185,7 +185,7 @@ export default function Curriculum({ onNavigate, user, onLogin }: Props) {
 
   return (
     <div className="min-h-screen bg-canvas text-text-primary">
-      <PublicNavbar active="curriculum" onNavigate={onNavigate} user={user} onLogin={onLogin} />
+      <PublicNavbar active="curriculum" onNavigate={onNavigate} user={user} onLogin={onLogin} onLogout={onLogout} />
 
       {/* Hero */}
       <div className="pt-[88px] pb-10 px-6 md:px-10 max-w-[1080px] mx-auto">

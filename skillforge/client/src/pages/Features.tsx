@@ -7,6 +7,7 @@ interface Props {
   onNavigate: (v: View) => void;
   user:       AppUser | null;
   onLogin:    (u: AppUser) => void;
+  onLogout?:  () => void;
 }
 
 function SectionTag({ n, label }: { n: string; label: string }) {
@@ -182,10 +183,10 @@ function EngineCard({ engine, onNavigate, user, onLogin }: {
   );
 }
 
-export default function Features({ onNavigate, user, onLogin }: Props) {
+export default function Features({ onNavigate, user, onLogin, onLogout }: Props) {
   return (
     <div className="min-h-screen bg-canvas text-text-primary">
-      <PublicNavbar active="features" onNavigate={onNavigate} user={user} onLogin={onLogin} />
+      <PublicNavbar active="features" onNavigate={onNavigate} user={user} onLogin={onLogin} onLogout={onLogout} />
 
       {/* Hero */}
       <div className="pt-[88px] pb-12 px-6 md:px-10 max-w-[1080px] mx-auto">
