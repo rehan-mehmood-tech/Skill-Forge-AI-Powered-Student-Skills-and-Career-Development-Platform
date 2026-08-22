@@ -3,6 +3,7 @@ import type { View, AppUser } from "../App";
 import AuthModal from "../components/AuthModal";
 import { post } from "../lib/api";
 import toast from 'react-hot-toast';
+import { useAuth } from "../context/AuthContext";
 
 interface Props {
   onNavigate: (v: View) => void;
@@ -95,6 +96,7 @@ export default function OnboardingFunnel({ onNavigate, onLogin }: Props) {
 
   // Auth State (Guard for Step 7)
   const [authRequired, setAuthRequired] = useState(false);
+  const { user: authUser } = useAuth();
 
   useEffect(() => {
     localStorage.setItem("ob_step", step.toString());
@@ -122,8 +124,10 @@ export default function OnboardingFunnel({ onNavigate, onLogin }: Props) {
       return;
     }
     if (step === 6) {
-      setAuthRequired(true); // show modal before proceeding to step 7
-      return;
+      if (!authUser) {
+        setAuthRequired(true); // show modal before proceeding to step 7
+        return;
+      }
     }
     setStep((s) => Math.min(s + 1, 7));
   };
@@ -139,10 +143,11 @@ export default function OnboardingFunnel({ onNavigate, onLogin }: Props) {
     try {
       // Actually hit the backend to generate the roadmap
       const res = await post('/api/roadmap/generate', { 
-        student_id: (window as any).currentUser?.id || "temp-id",
+        student_id: authUser?.id || "temp-id",
         target_role: sub || domain,
         weak_skills: techStack.slice(0, 3), // just an example of what to pass
-        experience_level: level
+        experience_level: level,
+        answers: mcqAnswers
       });
       toast.success("Roadmap generated successfully!");
       onNavigate("dashboard");

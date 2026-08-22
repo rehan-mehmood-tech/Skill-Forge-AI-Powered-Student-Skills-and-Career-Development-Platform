@@ -57,9 +57,6 @@ export default function AuthModal({
       toast.error(errorMsg);
     } else {
       toast.success("Successfully authenticated!");
-      // For now, fallback to mock user state until we sync it with App.tsx full real state
-      const user = role === "student" ? { ...STUDENT_USER, name: fullName || "Student" } : { ...MENTOR_USER, name: fullName || "Mentor" };
-      onLogin(user);
       onClose();
       if (redirectTo) {
         onNavigate(redirectTo);

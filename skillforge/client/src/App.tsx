@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 import { supabase } from "./lib/supabaseClient";
 import { useAuth } from "./context/AuthContext";
-import { STUDENT_USER, MENTOR_USER } from "./components/AuthModal";
 import Landing from "./pages/Landing";
 import OnboardingFunnel from "./pages/OnboardingFunnel";
 import Dashboard from "./pages/Dashboard";
@@ -86,12 +85,18 @@ export default function App() {
       }
 
       const metadata = authUser.user_metadata || {};
-      const isMentor = metadata.role === "mentor";
-      const baseUser = isMentor ? MENTOR_USER : STUDENT_USER;
+      const isMentor = metadata.role === "mentor" || profile?.role === "mentor";
+      const defaultSkillVector = [
+        { domain: "python", score: 0 },
+        { domain: "system_arch", score: 0, gap: true }
+      ];
       setUser({ 
-        ...baseUser, 
-        name: metadata.full_name || metadata.name || baseUser.name,
-        targetRole: profile?.target_role || baseUser.targetRole
+        name: metadata.full_name || metadata.name || "Student",
+        role: isMentor ? "mentor" : "student",
+        targetRole: profile?.target_role || "Undeclared",
+        activePhase: profile?.active_phase || "Phase 01: Foundations",
+        readinessPct: profile?.overall_readiness || 0,
+        skillVector: profile?.skill_vector || defaultSkillVector
       });
     } else {
       setUser(null);
