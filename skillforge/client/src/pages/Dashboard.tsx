@@ -10,21 +10,7 @@ interface Props {
 
 /* ─── Data ──────────────────────────────────────────────── */
 
-const SKILLS = [
-  { domain: "Python",    current: 0.79, required: 0.90, delta: "+0.01", positive: true,  assessed: true  },
-  { domain: "Web",       current: 0.55, required: 0.80, delta: "-0.25", positive: false, assessed: true  },
-  { domain: "Git",       current: 0.45, required: 0.70, delta: "-0.25", positive: false, assessed: true  },
-  { domain: "DevOps",    current: null, required: 0.50, delta: "-0.38", positive: false, assessed: false },
-  { domain: "AI",        current: 0.00, required: 0.40, delta: "-0.40", positive: false, assessed: true  },
-  { domain: "Databases", current: 0.30, required: 0.75, delta: "-0.45", positive: false, assessed: true  },
-];
 
-const ROADMAP_PHASES = [
-  { label: "Phase 01", name: "Foundations: Python & Git", status: "done",    progress: "7/7" },
-  { label: "Phase 02", name: "Web Fundamentals",          status: "active",  progress: "3/7" },
-  { label: "Phase 03", name: "Databases & APIs",          status: "pending", progress: "0/6" },
-  { label: "Phase 04", name: "DevOps & Deployment",       status: "pending", progress: "0/8" },
-];
 
 const RECENT = [
   { domain: "Python",    score: "0.79", date: "Aug 18",  status: "done"    },
@@ -91,6 +77,8 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+import { useState, useEffect } from "react";
+
 /* ─── Page ───────────────────────────────────────────────── */
 
 export default function Dashboard({ onNavigate, user, onLogout }: Props) {
@@ -100,7 +88,53 @@ export default function Dashboard({ onNavigate, user, onLogout }: Props) {
   const firstName = rawName.split(' ')[0];
   const fullName = rawName;
   const targetRole = profile?.target_role || "Software Engineer";
-  const readiness = profile?.overall_readiness != null ? profile.overall_readiness : 62;
+  const readiness = profile?.overall_readiness != null ? profile.overall_readiness : 0;
+
+  const [roadmapPhases, setRoadmapPhases] = useState<any[]>([
+    { label: "Phase 01", name: "Foundations", status: "pending", progress: "0 topics" },
+    { label: "Phase 02", name: "Architecture", status: "pending", progress: "0 topics" },
+    { label: "Phase 03", name: "Deployment", status: "pending", progress: "0 topics" }
+  ]);
+
+  const [skills, setSkills] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Load roadmap from local storage
+    const fallbackStr = localStorage.getItem("skillforge_fallback_roadmap");
+    if (fallbackStr) {
+      try {
+        const parsed = JSON.parse(fallbackStr);
+        if (Array.isArray(parsed)) {
+          setRoadmapPhases(parsed.map((p: any, i: number) => ({
+            label: `Phase 0${i + 1}`,
+            name: p.title || p.name || `Phase ${i + 1}`,
+            status: i === 0 ? "active" : "pending",
+            progress: `0/${p.topics?.length || 0} topics`
+          })));
+        }
+      } catch (e) {
+        console.error("Failed to parse fallback roadmap", e);
+      }
+    }
+
+    if (profile?.skill_vector) {
+      const vec = Object.entries(profile.skill_vector).map(([k, v]) => ({
+        domain: k.charAt(0).toUpperCase() + k.slice(1),
+        current: v as number,
+        required: 0.80,
+        delta: (v as number) >= 0.80 ? `+${((v as number) - 0.80).toFixed(2)}` : `${((v as number) - 0.80).toFixed(2)}`,
+        positive: (v as number) >= 0.80,
+        assessed: true
+      }));
+      setSkills(vec);
+    } else {
+      setSkills([
+        { domain: "Programming", current: 0, required: 0.8, delta: "-0.80", positive: false, assessed: false },
+        { domain: "Databases", current: 0, required: 0.7, delta: "-0.70", positive: false, assessed: false },
+        { domain: "Architecture", current: 0, required: 0.8, delta: "-0.80", positive: false, assessed: false }
+      ]);
+    }
+  }, [profile]);
 
   return (
     <AppShell active="dashboard" onNavigate={onNavigate} user={user} onLogout={onLogout}>
@@ -153,7 +187,7 @@ export default function Dashboard({ onNavigate, user, onLogout }: Props) {
           <Card>
             <SectionLabel>Skill Matrix</SectionLabel>
             <div className="flex flex-col">
-              {SKILLS.map((skill, i) => (
+              {skills.map((skill, i) => (
                 <div key={skill.domain}>
                   {i > 0 && <div className="h-px bg-border-subtle" />}
                   <div className="flex items-center gap-3 py-2">
@@ -207,7 +241,7 @@ export default function Dashboard({ onNavigate, user, onLogout }: Props) {
               {/* Spine */}
               <div className="absolute bg-border" style={{ left: 7, top: 6, bottom: 32, width: 1 }} />
 
-              {ROADMAP_PHASES.map((phase, i) => (
+              {roadmapPhases.map((phase, i) => (
                 <div key={phase.label} className={`relative flex gap-3 ${i > 0 ? "mt-5" : ""}`}>
                   <div className="flex-shrink-0 mt-0.5" style={{ width: 14 }}>
                     <div

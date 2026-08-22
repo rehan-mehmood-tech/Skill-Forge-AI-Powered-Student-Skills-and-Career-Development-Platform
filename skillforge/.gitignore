@@ -32,3 +32,5 @@ venv/
 *.tfstate
 *.tfstate.backup
 *.tfvars
+
+.vercel

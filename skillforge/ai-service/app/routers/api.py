@@ -90,7 +90,7 @@ async def generate_roadmap_endpoint(req: GenerateRoadmapRequest):
         import os
         
         llm = ChatGroq(
-            model_name="openai/gpt-oss-20b",
+            model_name="llama-3.3-70b-versatile",
             temperature=0.2,
             api_key=os.getenv("GROQ_API_KEY")
         )
@@ -98,12 +98,13 @@ async def generate_roadmap_endpoint(req: GenerateRoadmapRequest):
         sys_prompt = f"""You are an expert career advisor and technical architect.
 Generate a structured 12-week study roadmap for a student targeting the role of '{req.target_role}' with experience level '{req.experience_level}'.
 The student's weak skills are: {', '.join(req.weak_skills) if hasattr(req, 'weak_skills') and req.weak_skills else 'general topics'}.
-The roadmap MUST consist of exactly 3 phases:
-- Phase 1: Foundations (Weeks 1-4)
-- Phase 2: Core Architecture (Weeks 5-8)
-- Phase 3: Production/Scale (Weeks 9-12)
+The roadmap MUST consist of exactly 4 phases tailored specifically to the '{req.target_role}' domain:
+- Phase 1: Foundations (Weeks 1-3)
+- Phase 2: Domain-Specific Architecture (Weeks 4-6)
+- Phase 3: Advanced Topics & Tools (Weeks 7-9)
+- Phase 4: Production & Scale (Weeks 10-12)
 
-Return ONLY a valid JSON array of 3 phase objects. Do not include markdown code blocks, backticks, or any conversational text.
+Return ONLY a valid JSON array of 4 phase objects. Do not include markdown code blocks, backticks, or any conversational text.
 Each phase object must have the exact following structure:
 [{{
   "title": "Phase title",
@@ -132,8 +133,8 @@ Each phase object must have the exact following structure:
                 content = content[:-3]
             phases = json.loads(content.strip())
             
-            # Ensure it is a list of 3 items
-            if not isinstance(phases, list) or len(phases) != 3:
+            # Ensure it is a list of 4 items
+            if not isinstance(phases, list) or len(phases) != 4:
                 raise ValueError("Invalid phase format from LLM")
         except Exception as llm_err:
             # Safe fallback

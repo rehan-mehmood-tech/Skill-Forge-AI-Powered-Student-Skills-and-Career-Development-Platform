@@ -22,7 +22,7 @@ tool_node = ToolNode(tools)
 
 # Initialize Groq LLM
 llm = ChatGroq(
-    model_name="openai/gpt-oss-20b",
+    model_name="llama-3.3-70b-versatile",
     temperature=0.2,
     api_key=os.getenv("GROQ_API_KEY")
 )
@@ -30,9 +30,11 @@ llm_with_tools = llm.bind_tools(tools)
 
 def agent_node(state: AgentState):
     messages = state["messages"]
+    target_role = state.get("target_role", "Software Engineer")
     
     if not any(isinstance(m, SystemMessage) for m in messages):
-        sys_msg_text = """You are the SkillForge AI Career Copilot, an elite technical mentor and career strategist for software engineering students.
+        sys_msg_text = f"""You are the SkillForge AI Career Copilot, an elite technical mentor and career strategist for software engineering students.
+The user's current target career path is: {target_role}. Always contextualize your advice specifically to this domain.
 
 RULES:
 1. ONLY answer questions related to software engineering, career roadmaps, tech stacks, coding, cloud/devops, system design, and technical interview preparation.

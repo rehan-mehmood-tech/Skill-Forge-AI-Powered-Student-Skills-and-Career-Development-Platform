@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { View, AppUser } from "../App";
 import AppShell from "../components/AppShell";
+import { useAuth } from "../context/AuthContext";
 
 interface Props {
   onNavigate: (v: View) => void;
@@ -8,29 +9,45 @@ interface Props {
   onLogout?:  () => void;
 }
 
-const SKILL_VECTOR: { domain: string; key: string; value: number | null; required: number }[] = [
-  { domain: "Python",    key: "python",    value: 0.79, required: 0.90 },
-  { domain: "Web Dev",   key: "web",       value: 0.55, required: 0.80 },
-  { domain: "Git",       key: "git",       value: 0.45, required: 0.70 },
-  { domain: "DevOps",    key: "devops",    value: null,  required: 0.50 },
-  { domain: "AI",        key: "ai",        value: 0.00, required: 0.40 },
-  { domain: "Databases", key: "databases", value: 0.30, required: 0.75 },
-];
-
-const EXTRACTED_SKILLS = [
-  "python", "fastapi", "postgresql", "docker", "git",
-  "redis", "linux", "rest-apis", "sqlalchemy", "pytest",
-];
-
 const EXPERIENCE_OPTIONS = ["Student / Bootcamp", "Junior (0–2 yrs)", "Mid-Level (2–5 yrs)", "Senior (5+ yrs)"];
 
 export default function Profile({ onNavigate, user, onLogout }: Props) {
-  const [name,       setName]       = useState(user?.name || "");
-  const [email,      setEmail]      = useState("aisha@example.com");
-  const [bio,        setBio]        = useState("Backend-focused engineer pursuing a career in distributed systems and cloud infrastructure.");
+  const { user: authUser, profile } = useAuth();
+  
+  const [name,       setName]       = useState("");
+  const [email,      setEmail]      = useState("");
+  const [bio,        setBio]        = useState("");
   const [expLevel,   setExpLevel]   = useState("Junior (0–2 yrs)");
   const [saved,      setSaved]      = useState(false);
-  const [fileLabel,  setFileLabel]  = useState("aisha_khan_resume.pdf");
+  const [fileLabel,  setFileLabel]  = useState("No resume uploaded yet");
+  const [extractedSkills, setExtractedSkills] = useState<string[]>([]);
+  const [skillVector, setSkillVector] = useState<any[]>([]);
+  const [initials, setInitials] = useState("U");
+
+  useEffect(() => {
+    if (authUser) {
+      const uName = authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || "User";
+      setName(uName);
+      setEmail(authUser.email || "");
+      setInitials(uName.substring(0, 2).toUpperCase());
+    }
+    
+    if (profile) {
+      setBio(profile.metadata?.summary || profile.bio || "");
+      setExpLevel(profile.metadata?.current_level || profile.experience_level || "Junior (0–2 yrs)");
+      setExtractedSkills(profile.metadata?.extracted_skills || []);
+      
+      if (profile.skill_vector) {
+        const vec = Object.entries(profile.skill_vector).map(([k, v]) => ({
+          domain: k.charAt(0).toUpperCase() + k.slice(1),
+          key: k,
+          value: v as number,
+          required: 0.80
+        }));
+        setSkillVector(vec);
+      }
+    }
+  }, [authUser, profile]);
 
   const handleSave = () => {
     setSaved(true);
@@ -62,7 +79,7 @@ export default function Profile({ onNavigate, user, onLogout }: Props) {
               {/* Avatar */}
               <div className="flex flex-col items-center gap-3 flex-shrink-0">
                 <div className="w-20 h-20 rounded-xl bg-surface-hover border border-border flex items-center justify-center">
-                  <span className="font-sans font-bold text-2xl text-text-secondary">AK</span>
+                  <span className="font-sans font-bold text-2xl text-text-secondary">{initials}</span>
                 </div>
                 <button className="font-sans text-[12px] text-text-muted hover:text-text-secondary transition-colors cursor-pointer">
                   Change photo
@@ -174,7 +191,7 @@ export default function Profile({ onNavigate, user, onLogout }: Props) {
                 Extracted Skills
               </p>
               <div className="flex flex-wrap gap-2">
-                {EXTRACTED_SKILLS.map((skill) => (
+                {extractedSkills.map((skill) => (
                   <span
                     key={skill}
                     className="font-mono text-[11px] text-text-secondary border border-border rounded-md px-2 py-0.5 bg-surface-hover hover:border-text-muted transition-colors cursor-default"
@@ -203,7 +220,7 @@ export default function Profile({ onNavigate, user, onLogout }: Props) {
             {/* Raw JSONB block */}
             <div className="bg-canvas border border-border rounded-lg p-4 mb-5 font-mono text-[12px] leading-6 w-full overflow-x-auto">
               <span className="text-text-muted">{"{"}</span>
-              {SKILL_VECTOR.map((row) => (
+              {skillVector.map((row) => (
                 <div key={row.key} className="ml-4">
                   <span className="text-text-secondary">&quot;{row.key}&quot;</span>
                   <span className="text-text-muted">: </span>
@@ -230,7 +247,7 @@ export default function Profile({ onNavigate, user, onLogout }: Props) {
                 <span className="font-mono text-[10px] text-text-muted uppercase tracking-wide flex-shrink-0 text-right" style={{ width: 64 }}>Status</span>
               </div>
 
-              {SKILL_VECTOR.map((row, i) => (
+              {skillVector.map((row, i) => (
                 <div key={row.key}>
                   {i > 0 && <div className="h-px bg-border-subtle" />}
                   <div className="flex items-center gap-3 py-2.5">

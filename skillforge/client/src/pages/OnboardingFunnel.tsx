@@ -131,10 +131,10 @@ export default function OnboardingFunnel({ onNavigate, onLogin }: Props) {
       // Do not show red toast. Smoothly use filename/keywords.
       setUploadedFile(file.name);
       const fallbackSummary = {
-        skills: ["React", "Python", "Git", "SQL"],
+        skills: [],
         current_level: "Entry Level",
-        detected_role: "Software Engineer",
-        summary: `Extracted data from ${file.name}. Profile indicates solid foundational skills in modern development.`
+        detected_role: "General / Undecided",
+        summary: `No software engineering experience detected in resume. Build your profile step-by-step.`
       };
       setTechStack(fallbackSummary.skills);
       setCvSummary(fallbackSummary);
@@ -212,38 +212,39 @@ export default function OnboardingFunnel({ onNavigate, onLogin }: Props) {
     } catch (error) {
       console.warn("Roadmap backend timeout/error, generating robust local JSON", error);
       
-      const fallbackRoadmap = [
-        {
-          "title": "Phase 1: Core Fundamentals",
-          "topics": [
-            {
-              "name": `Master core concepts in ${sub || domain}`,
-              "projects": ["Build a small portfolio project"],
-              "resources": [{"type": "docs", "title": "Official Guides and Documentation"}]
-            }
-          ]
-        },
-        {
-          "title": "Phase 2: Applied Architecture",
-          "topics": [
-            {
-              "name": "Component Design & Scalability",
-              "projects": ["Implement modular architecture"],
-              "resources": [{"type": "course", "title": "Advanced Engineering Patterns"}]
-            }
-          ]
-        },
-        {
-          "title": "Phase 3: Production & Deployment",
-          "topics": [
-            {
-              "name": "CI/CD & Cloud Hosting",
-              "projects": ["Deploy application to production with automated pipelines"],
-              "resources": [{"type": "article", "title": "DevOps Best Practices"}]
-            }
-          ]
-        }
-      ];
+      let fallbackRoadmap = [];
+      const lowerDomain = (domain || sub || "").toLowerCase();
+      
+      if (lowerDomain.includes("cyber") || lowerDomain.includes("security")) {
+        fallbackRoadmap = [
+          {"title": "Phase 1: Foundations", "topics": [{"name": "Linux & Networking", "projects": ["Set up local network"], "resources": [{"type": "course", "title": "Networking Basics"}]}]},
+          {"title": "Phase 2: Vulnerability Assessment", "topics": [{"name": "Port Scanning & Metasploit", "projects": ["Scan a vulnerable VM"], "resources": [{"type": "docs", "title": "Metasploit Guide"}]}]},
+          {"title": "Phase 3: Web Security", "topics": [{"name": "OWASP Top 10", "projects": ["Test intentionally vulnerable app"], "resources": [{"type": "course", "title": "Web Application Security"}]}]},
+          {"title": "Phase 4: SOC & Blue Team", "topics": [{"name": "Active Directory Attacks & SIEM", "projects": ["Configure Splunk logs"], "resources": [{"type": "article", "title": "SIEM Fundamentals"}]}]}
+        ];
+      } else if (lowerDomain.includes("game") || lowerDomain.includes("unreal")) {
+        fallbackRoadmap = [
+          {"title": "Phase 1: Foundations", "topics": [{"name": "C++ & Math", "projects": ["Build text adventure"], "resources": [{"type": "docs", "title": "C++ Basics"}]}]},
+          {"title": "Phase 2: Engine Internals", "topics": [{"name": "Gameplay Frameworks", "projects": ["Character movement"], "resources": [{"type": "course", "title": "Unreal Engine C++"}]}]},
+          {"title": "Phase 3: Advanced Graphics", "topics": [{"name": "Shaders & HLSL", "projects": ["Custom material shader"], "resources": [{"type": "article", "title": "Intro to Shaders"}]}]},
+          {"title": "Phase 4: Optimization", "topics": [{"name": "Physics Substepping & Memory", "projects": ["Optimize collision mesh"], "resources": [{"type": "docs", "title": "Memory Management"}]}]}
+        ];
+      } else if (lowerDomain.includes("ai") || lowerDomain.includes("ml")) {
+        fallbackRoadmap = [
+          {"title": "Phase 1: Foundations", "topics": [{"name": "Python Math/Vectors", "projects": ["Build basic regression"], "resources": [{"type": "course", "title": "Linear Algebra for ML"}]}]},
+          {"title": "Phase 2: Deep Learning", "topics": [{"name": "Neural Networks & PyTorch", "projects": ["Train custom CNN"], "resources": [{"type": "docs", "title": "PyTorch Tutorials"}]}]},
+          {"title": "Phase 3: LLMs & RAG", "topics": [{"name": "Vector DBs & RAG", "projects": ["Semantic search tool"], "resources": [{"type": "article", "title": "RAG Architecture"}]}]},
+          {"title": "Phase 4: Agents", "topics": [{"name": "Agentic Loops (LangGraph)", "projects": ["Multi-agent workflow"], "resources": [{"type": "course", "title": "LangGraph Mastery"}]}]}
+        ];
+      } else {
+        fallbackRoadmap = [
+          {"title": "Phase 1: Core Fundamentals", "topics": [{"name": `Master core concepts in ${sub || domain}`, "projects": ["Build a small portfolio project"], "resources": [{"type": "docs", "title": "Official Guides and Documentation"}]}]},
+          {"title": "Phase 2: Applied Architecture", "topics": [{"name": "Component Design & Scalability", "projects": ["Implement modular architecture"], "resources": [{"type": "course", "title": "Advanced Engineering Patterns"}]}]},
+          {"title": "Phase 3: Production & Deployment", "topics": [{"name": "CI/CD & Cloud Hosting", "projects": ["Deploy application to production with automated pipelines"], "resources": [{"type": "article", "title": "DevOps Best Practices"}]}]},
+          {"title": "Phase 4: Advanced Systems", "topics": [{"name": "Microservices & Caching", "projects": ["Implement Redis caching"], "resources": [{"type": "docs", "title": "System Design Primer"}]}]}
+        ];
+      }
+      
       localStorage.setItem("skillforge_fallback_roadmap", JSON.stringify(fallbackRoadmap));
       
       toast.success("Roadmap generated successfully!");
