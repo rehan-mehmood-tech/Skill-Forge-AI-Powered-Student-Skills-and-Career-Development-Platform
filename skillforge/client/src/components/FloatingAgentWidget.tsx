@@ -45,6 +45,8 @@ export default function FloatingAgentWidget() {
   const [isHovering, setIsHovering] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  const sessionIdRef = useRef(`session_${Date.now()}`);
+
   useEffect(() => {
     if (isOpen && bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: "smooth" });
@@ -66,6 +68,7 @@ export default function FloatingAgentWidget() {
 
       const res: any = await post('/api/ai/chat-agent', { 
         message: text.trim(), 
+        session_id: sessionIdRef.current,
         target_role: "Backend Developer",
         conversation_history: history
       });
@@ -91,7 +94,7 @@ export default function FloatingAgentWidget() {
             ? {
                 ...m,
                 isTyping: false,
-                content: "I'm currently unable to reach the AI core service. Please check that both the Gateway (port 5000) and AI Service (port 8000) are running.",
+                content: "Unable to connect to AI Mentor. Please retry in a moment.",
               }
             : m
         )

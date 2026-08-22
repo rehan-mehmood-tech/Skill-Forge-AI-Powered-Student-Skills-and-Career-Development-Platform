@@ -13,10 +13,10 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 const router = express.Router();
 
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000';
-const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY;
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'https://skillforge-ai-service.onrender.com';
+const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY || 'skillforge-secret-key-2026';
 
-if (!INTERNAL_API_KEY) {
+if (!process.env.INTERNAL_API_KEY) {
   console.warn("WARNING: INTERNAL_API_KEY environment variable is not set! Using fallback for development.");
 }
 
@@ -64,9 +64,35 @@ const forwardRequest = async (req, res, endpoint) => {
   }
 };
 
+const forwardChatRequest = async (req, res) => {
+  try {
+    const payload = { ...req.body };
+    if (!payload.student_id && req.user && req.user.id) {
+      payload.student_id = req.user.id;
+    }
+
+    const response = await axios.post(`${AI_SERVICE_URL}/agent/run`, payload, {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-internal-key': INTERNAL_API_KEY
+      },
+      timeout: 15000
+    });
+
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    console.error(`[Copilot Proxy Error] ${error.message}`, error.response?.data || error);
+    if (error.response) {
+      res.status(error.response.status).json(error.response.data);
+    } else {
+      res.status(500).json({ error: "Failed to connect to AI Service", details: error.message });
+    }
+  }
+};
+
 router.post('/analyze-skills', analyzeLimiter, validate(analyzeSkillsSchema), (req, res) => forwardRequest(req, res, '/api/analyze-skills'));
 router.post('/generate-roadmap', roadmapLimiter, validate(generateRoadmapSchema), (req, res) => forwardRequest(req, res, '/api/generate-roadmap'));
-router.post('/chat-agent', chatLimiter, validate(chatAgentSchema), (req, res) => forwardRequest(req, res, '/api/chat-agent'));
+router.post('/chat-agent', chatLimiter, validate(chatAgentSchema), forwardChatRequest);
 router.post('/rag-query', chatLimiter, validate(ragQuerySchema), (req, res) => forwardRequest(req, res, '/api/rag-query'));
 
 // New Routes for integration
