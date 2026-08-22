@@ -117,14 +117,15 @@ export default function OnboardingFunnel({ onNavigate, onLogin }: Props) {
       });
       toast.success("Resume parsed successfully!");
       setUploadedFile(file.name);
-      if (res && res.extracted_skills) {
-        setTechStack(res.extracted_skills);
+      if (res && res.skills) {
+        setTechStack(res.skills);
       }
-      if (res && res.target_domains && res.target_domains.length > 0) {
-        const matched = DOMAINS.find(d => res.target_domains.some((td: string) => td.toLowerCase().includes(d.id.toLowerCase()) || d.label.toLowerCase().includes(td.toLowerCase())));
+      if (res && res.detected_role) {
+        const matched = DOMAINS.find(d => res.detected_role.toLowerCase().includes(d.id.toLowerCase()) || d.label.toLowerCase().includes(res.detected_role.toLowerCase()));
         if (matched) setDomain(matched.id);
       }
-      setStep(5);
+      setCvSummary(res);
+      setStep(1.5);
     } catch (err) {
       console.error("Failed to parse resume", err);
       toast.error("Failed to parse resume. Please build step-by-step.");
@@ -136,6 +137,7 @@ export default function OnboardingFunnel({ onNavigate, onLogin }: Props) {
   // Auth State (Guard for Step 7)
   const [authRequired, setAuthRequired] = useState(false);
   const { user: authUser } = useAuth();
+  const [cvSummary, setCvSummary] = useState<any>(null);
 
   useEffect(() => {
     localStorage.setItem("ob_step", step.toString());
@@ -168,7 +170,7 @@ export default function OnboardingFunnel({ onNavigate, onLogin }: Props) {
         return;
       }
     }
-    setStep((s) => Math.min(s + 1, 7));
+    setStep((s) => Math.min(Math.floor(s) + 1, 7));
   };
 
   const finishAuth = (u: AppUser) => {
@@ -204,6 +206,7 @@ export default function OnboardingFunnel({ onNavigate, onLogin }: Props) {
 
   const canProceed = () => {
     if (step === 1) return true; // Can skip resume
+    if (step === 1.5) return true;
     if (step === 2) return domain !== "";
     if (step === 3) return level !== "";
     if (step === 4) return sub !== "";
@@ -279,6 +282,40 @@ export default function OnboardingFunnel({ onNavigate, onLogin }: Props) {
             >
               Build Profile Step-by-Step →
             </button>
+          </div>
+        );
+
+      case 1.5:
+        return (
+          <div className="max-w-2xl mx-auto mt-10 animate-fade-up">
+            <h2 className="font-sans font-bold text-3xl mb-8 text-center text-text-primary">Profile Extraction Summary</h2>
+            <div className="bg-surface border border-border rounded-xl p-8 flex flex-col items-center">
+              <h3 className="font-sans font-medium text-xl mb-4 text-center">Here is where you currently stand:</h3>
+              
+              <div className="w-full text-left bg-surface-hover border border-border p-4 rounded-lg mb-6">
+                <p className="font-sans text-sm text-text-secondary mb-2"><span className="font-bold text-text-primary">Detected Role:</span> {cvSummary?.detected_role || "Unknown"}</p>
+                <p className="font-sans text-sm text-text-secondary mb-2"><span className="font-bold text-text-primary">Current Level:</span> {cvSummary?.current_level || "Unknown"}</p>
+                <p className="font-sans text-sm text-text-secondary mb-2"><span className="font-bold text-text-primary">Summary:</span> {cvSummary?.summary || "No summary available."}</p>
+              </div>
+
+              <div className="w-full text-left">
+                <p className="font-mono text-[11px] text-text-muted uppercase tracking-widest mb-3">Found {cvSummary?.skills?.length || 0} Skills</p>
+                <div className="flex flex-wrap gap-2 mb-8">
+                  {(cvSummary?.skills || []).map((skill: string) => (
+                    <span key={skill} className="font-sans text-[12px] bg-surface-hover border border-border rounded-md px-2 py-1 text-text-secondary">
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                onClick={() => setStep(2)}
+                className="btn-cta h-12 px-8 rounded-lg bg-white text-black font-bold text-[15px] hover:bg-zinc-100 cursor-pointer w-full max-w-md"
+              >
+                Confirm & Continue to Custom Domain Selection →
+              </button>
+            </div>
           </div>
         );
 

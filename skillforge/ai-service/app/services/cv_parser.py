@@ -10,14 +10,13 @@ from fastembed import TextEmbedding
 from supabase import create_client
 
 class CVParseResult(BaseModel):
-    extracted_skills: List[str]
-    experience_years: float
-    target_domains: List[str]
+    skills: List[str]
+    current_level: str
+    detected_role: str
     summary: str
 
 class CVParser:
     def __init__(self):
-        # We use openai/gpt-oss-20b as it is the currently active Groq model from previous steps
         self.llm = ChatGroq(
             model_name="openai/gpt-oss-20b",
             temperature=0.0,
@@ -41,29 +40,22 @@ class CVParser:
         prompt = PromptTemplate.from_template(
             "You are an expert HR resume parser. Analyze the following resume text and extract the required information.\n\n"
             "Resume Text:\n{text}\n\n"
-            "Output strictly valid JSON conforming to the requested schema."
+            "Output strictly valid JSON conforming to the requested schema. Provide a list of technical 'skills', the 'current_level' of the candidate (e.g. Junior, Mid-level), the 'detected_role' they are aiming for or currently hold, and a brief 'summary' of their profile."
         )
         
         chain = prompt | self.llm
         result: CVParseResult = chain.invoke({"text": text[:15000]})
         
-        if student_id and self.supabase:
-            # Create a string representation of skills for embedding
-            skills_text = ", ".join(result.extracted_skills)
-            # Embed using fastembed
+        if student_id and student_id != "temp-id" and self.supabase:
+            skills_text = ", ".join(result.skills)
             embedding = next(self.embedding_model.embed([skills_text])).tolist()
             
-            # Update Supabase profile
-            # We assume a column 'skill_vector' or similar. 
-            # In Phase 8, the skill vector was fetched from 'profiles' or 'assessments'.
-            # Based on standard usage, let's update 'skill_embedding' or similar if available, or just update metadata.
-            # I will update 'target_role' or whatever fields we can. Let's just update the profile metadata with extracted skills.
             self.supabase.table('profiles').update({
                 'metadata': {
-                    'extracted_skills': result.extracted_skills,
+                    'extracted_skills': result.skills,
                     'summary': result.summary,
-                    'experience_years': result.experience_years,
-                    'target_domains': result.target_domains
+                    'current_level': result.current_level,
+                    'detected_role': result.detected_role
                 }
             }).eq('id', student_id).execute()
             

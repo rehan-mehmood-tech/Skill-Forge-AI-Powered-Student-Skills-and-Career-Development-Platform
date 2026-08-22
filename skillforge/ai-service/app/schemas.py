@@ -10,12 +10,16 @@ class GenerateRoadmapRequest(BaseModel):
     target_role: str
     timeframe_weeks: Optional[int] = 12
     experience_level: Optional[str] = "Beginner"
+    weak_skills: Optional[List[str]] = None
     answers: Optional[List[Dict[str, Any]]] = None
 
 class ChatAgentRequest(BaseModel):
     student_id: str
     message: str
     target_role: Optional[str] = None
+    experience_level: Optional[str] = None
+    session_id: Optional[str] = None
+    conversation_history: Optional[List[Dict[str, str]]] = None
 
 class RagQueryRequest(BaseModel):
     query: str

@@ -53,7 +53,7 @@ export default function FloatingAgentWidget() {
 
     try {
       const history = messages
-        .filter(m => !m.isTyping && m.role !== 'assistant')
+        .filter(m => !m.isTyping)
         .map(m => ({ role: m.role, content: m.content }));
 
       const res: any = await post('/api/ai/chat-agent', { 

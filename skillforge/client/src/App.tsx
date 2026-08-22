@@ -79,10 +79,6 @@ export default function App() {
     
     // Auth Persistence from AuthContext
     if (authUser) {
-      if (!isLoading && !profile && view !== "onboarding") {
-        history.pushState({}, "", "/onboarding");
-        if (isMounted) setView("onboarding");
-      }
 
       const metadata = authUser.user_metadata || {};
       const isMentor = metadata.role === "mentor" || profile?.role === "mentor";

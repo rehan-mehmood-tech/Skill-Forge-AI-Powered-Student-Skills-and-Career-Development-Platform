@@ -97,6 +97,7 @@ async def generate_roadmap_endpoint(req: GenerateRoadmapRequest):
         
         sys_prompt = f"""You are an expert career advisor and technical architect.
 Generate a structured 12-week study roadmap for a student targeting the role of '{req.target_role}' with experience level '{req.experience_level}'.
+The student's weak skills are: {', '.join(req.weak_skills) if hasattr(req, 'weak_skills') and req.weak_skills else 'general topics'}.
 The roadmap MUST consist of exactly 3 phases:
 - Phase 1: Foundations (Weeks 1-4)
 - Phase 2: Core Architecture (Weeks 5-8)
@@ -104,13 +105,18 @@ The roadmap MUST consist of exactly 3 phases:
 
 Return ONLY a valid JSON array of 3 phase objects. Do not include markdown code blocks, backticks, or any conversational text.
 Each phase object must have the exact following structure:
-{{
-  "phase_number": <integer 1-3>,
+[{{
   "title": "Phase title",
-  "duration_weeks": 4,
-  "milestones": ["Milestone 1", "Milestone 2", "Milestone 3"],
-  "deliverable_project": "A project description that demonstrates capability"
-}}"""
+  "topics": [
+    {{
+      "name": "Topic Name",
+      "projects": ["Project description 1"],
+      "resources": [
+        {{"type": "course", "title": "Resource title"}}
+      ]
+    }}
+  ]
+}}]"""
 
         try:
             response = llm.invoke([
@@ -133,37 +139,49 @@ Each phase object must have the exact following structure:
             # Safe fallback
             phases = [
                 {
-                    "phase_number": 1,
                     "title": "Phase 1: Foundations",
-                    "duration_weeks": 4,
-                    "milestones": [
-                        f"Master core language syntax and tooling for {req.target_role}",
-                        "Implement basic data structures and algorithms",
-                        "Configure local development environment and version control"
-                    ],
-                    "deliverable_project": f"Command-line script demonstrating {req.target_role} syntax and core features"
+                    "topics": [
+                        {
+                            "name": f"Master core syntax for {req.target_role}",
+                            "projects": [f"Command-line script demonstrating {req.target_role} features"],
+                            "resources": [{"type": "docs", "title": "Official Documentation"}]
+                        },
+                        {
+                            "name": "Data Structures & Algorithms",
+                            "projects": ["Implement a custom stack/queue"],
+                            "resources": [{"type": "course", "title": "Data Structures - FreeCodeCamp"}]
+                        }
+                    ]
                 },
                 {
-                    "phase_number": 2,
                     "title": "Phase 2: Core Architecture",
-                    "duration_weeks": 4,
-                    "milestones": [
-                        "Design database schemas and write efficient queries",
-                        "Implement RESTful API endpoints and authentication",
-                        "Learn concurrency patterns and async task processing"
-                    ],
-                    "deliverable_project": f"Monolithic REST API with relational database and JWT authentication"
+                    "topics": [
+                        {
+                            "name": "REST API & Authentication",
+                            "projects": ["Build a REST API with JWT Auth"],
+                            "resources": [{"type": "article", "title": "RESTful Design Principles"}]
+                        },
+                        {
+                            "name": "Database Integration",
+                            "projects": ["Connect PostgreSQL and implement ORM"],
+                            "resources": [{"type": "course", "title": "SQL and Database Design"}]
+                        }
+                    ]
                 },
                 {
-                    "phase_number": 3,
                     "title": "Phase 3: Production/Scale",
-                    "duration_weeks": 4,
-                    "milestones": [
-                        "Containerize services with Docker and run with docker-compose",
-                        "Set up CI/CD pipeline for automated testing and deployment",
-                        "Configure basic caching (e.g. Redis) and log metrics"
-                    ],
-                    "deliverable_project": f"Containerized microservice deployed to production with CI/CD and basic monitoring"
+                    "topics": [
+                        {
+                            "name": "Containerization (Docker)",
+                            "projects": ["Dockerize the API service"],
+                            "resources": [{"type": "docs", "title": "Docker Getting Started"}]
+                        },
+                        {
+                            "name": "CI/CD & Deployment",
+                            "projects": ["Deploy API via GitHub Actions"],
+                            "resources": [{"type": "article", "title": "CI/CD Best Practices"}]
+                        }
+                    ]
                 }
             ]
             
@@ -178,8 +196,18 @@ Each phase object must have the exact following structure:
 @router.post("/chat-agent")
 async def chat_agent(req: ChatAgentRequest):
     try:
+        from langchain_core.messages import AIMessage, HumanMessage
+        messages = []
+        if req.conversation_history:
+            for msg in req.conversation_history:
+                if msg.get("role") == "user":
+                    messages.append(HumanMessage(content=msg.get("content", "")))
+                elif msg.get("role") == "assistant":
+                    messages.append(AIMessage(content=msg.get("content", "")))
+        messages.append(HumanMessage(content=req.message))
+
         state = {
-            "messages": [HumanMessage(content=req.message)],
+            "messages": messages,
             "student_id": req.student_id,
             "target_role": req.target_role,
             "skill_gaps": None,
