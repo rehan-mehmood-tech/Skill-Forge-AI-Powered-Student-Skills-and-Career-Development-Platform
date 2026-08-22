@@ -219,8 +219,8 @@ export default function Roadmap({ onNavigate, user, onLogout }: Props) {
   const handleGenerateRoadmap = async () => {
     setIsGenerating(true);
     try {
-      const response: any = await post('/ai/generate-roadmap', {
-        target_role: "Backend Developer",
+      const response: any = await post('/api/roadmap/generate', {
+        target_role: user?.targetRole || "Backend Developer",
         timeframe_weeks: 12
       });
       
@@ -275,7 +275,7 @@ export default function Roadmap({ onNavigate, user, onLogout }: Props) {
 
         {/* Header */}
         <div className="mb-8">
-          <p className="font-mono text-[12px] text-text-muted mb-2">Roadmap / Backend Developer</p>
+          <p className="font-mono text-[12px] text-text-muted mb-2">Roadmap / {user?.targetRole || "Software Engineer"}</p>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="font-sans font-semibold text-2xl text-text-primary">

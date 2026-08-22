@@ -237,7 +237,7 @@ function HeroSection({ onNavigate, user, onLogin }: { onNavigate: (v: View) => v
             </>
           ) : (
             <>
-              <button onClick={() => handleAuth("landing")} className="btn-cta h-10 px-6 rounded-lg bg-white text-black text-[13px] font-semibold hover:bg-zinc-100 cursor-pointer">
+              <button onClick={() => handleAuth("onboarding")} className="btn-cta h-10 px-6 rounded-lg bg-white text-black text-[13px] font-semibold hover:bg-zinc-100 cursor-pointer">
                 Audit Your Skill Set →
               </button>
               <button onClick={() => handleAuth("dashboard")} className="btn-cta h-10 px-5 rounded-lg border border-border bg-surface text-text-secondary hover:border-text-muted hover:bg-surface-hover hover:text-text-primary text-[13px] font-medium cursor-pointer">
@@ -667,7 +667,7 @@ function FinalCTA({ onNavigate, user, onLogin }: { onNavigate: (v: View) => void
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <button
-            onClick={() => user ? onNavigate("onboarding") : handleAuth("landing")}
+            onClick={() => user ? onNavigate("onboarding") : handleAuth("onboarding")}
             className="btn-cta w-full sm:w-auto h-11 px-8 rounded-lg bg-white text-black text-[13px] font-semibold hover:bg-zinc-100 cursor-pointer"
           >
             {user ? `Resume ${user.activePhase} →` : "Audit My Skillset — Free →"}

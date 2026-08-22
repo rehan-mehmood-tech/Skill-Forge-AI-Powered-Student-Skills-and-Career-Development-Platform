@@ -18,8 +18,8 @@ const NAV_ITEMS: { id: View | "copilot"; label: string; icon: string }[] = [
 export default function Sidebar({ active, onNavigate, user, onLogout }: Props) {
   const initials = user
     ? user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
-    : "AK";
-  const displayName = user?.name ?? "Aisha Khan";
+    : "ST";
+  const displayName = user?.name ?? "Student";
   const displayRole = user?.role === "mentor" ? "[mentor]" : "[student]";
   const isMentor    = user?.role === "mentor";
 

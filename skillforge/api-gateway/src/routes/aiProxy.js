@@ -59,7 +59,7 @@ const forwardRequest = async (req, res, endpoint) => {
     if (error.response) {
       res.status(error.response.status).json(error.response.data);
     } else {
-      res.status(500).json({ error: "Failed to connect to AI Service", details: error.message });
+      res.status(503).json({ error: "AI Service is temporarily unavailable. Please try again later." });
     }
   }
 };
@@ -71,21 +71,20 @@ const forwardChatRequest = async (req, res) => {
       payload.student_id = req.user.id;
     }
 
-    const response = await axios.post(`${AI_SERVICE_URL}/agent/run`, payload, {
+    const response = await axios.post(`${AI_SERVICE_URL}/api/chat-agent`, payload, {
       headers: {
         'Content-Type': 'application/json',
-        'x-internal-key': INTERNAL_API_KEY
+        'X-API-Key': INTERNAL_API_KEY
       },
       timeout: 15000
     });
 
     res.status(response.status).json(response.data);
   } catch (error) {
-    console.error(`[Copilot Proxy Error] ${error.message}`, error.response?.data || error);
     if (error.response) {
       res.status(error.response.status).json(error.response.data);
     } else {
-      res.status(500).json({ error: "Failed to connect to AI Service", details: error.message });
+      res.status(503).json({ error: "AI Service is temporarily unavailable. Please try again later." });
     }
   }
 };
@@ -124,7 +123,7 @@ router.post('/upload-cv', uploadLimiter, upload.single('file'), async (req, res)
     if (error.response) {
       res.status(error.response.status).json(error.response.data);
     } else {
-      res.status(500).json({ error: "Failed to connect to AI Service", details: error.message });
+      res.status(503).json({ error: "AI Service is temporarily unavailable. Please try again later." });
     }
   }
 });

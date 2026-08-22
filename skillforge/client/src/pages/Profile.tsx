@@ -25,7 +25,7 @@ const EXTRACTED_SKILLS = [
 const EXPERIENCE_OPTIONS = ["Student / Bootcamp", "Junior (0–2 yrs)", "Mid-Level (2–5 yrs)", "Senior (5+ yrs)"];
 
 export default function Profile({ onNavigate, user, onLogout }: Props) {
-  const [name,       setName]       = useState("Aisha Khan");
+  const [name,       setName]       = useState(user?.name || "");
   const [email,      setEmail]      = useState("aisha@example.com");
   const [bio,        setBio]        = useState("Backend-focused engineer pursuing a career in distributed systems and cloud infrastructure.");
   const [expLevel,   setExpLevel]   = useState("Junior (0–2 yrs)");
@@ -123,7 +123,7 @@ export default function Profile({ onNavigate, user, onLogout }: Props) {
                     Target Role
                   </label>
                   <div className="h-9 px-3 rounded-lg bg-surface-hover border border-border text-text-primary text-sm font-sans flex items-center justify-between cursor-pointer hover:border-text-muted transition-colors">
-                    <span>Backend Developer</span>
+                    <span>{user?.targetRole || "Software Engineer"}</span>
                     <span className="text-text-muted">↓</span>
                   </div>
                 </div>
