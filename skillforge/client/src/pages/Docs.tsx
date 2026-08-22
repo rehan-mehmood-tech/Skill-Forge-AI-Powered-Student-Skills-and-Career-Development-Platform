@@ -10,10 +10,11 @@ interface Props {
 }
 
 const SECTIONS = [
-  { id: "architecture", label: "System Architecture" },
-  { id: "scoring",      label: "Scoring Formula"     },
-  { id: "sdg",          label: "SDG 4 & 8 Mapping"   },
-  { id: "api",          label: "API Integration"      },
+  { id: "overview",   label: "Platform Overview" },
+  { id: "assessment", label: "Skill Auditing" },
+  { id: "readiness",  label: "Readiness Score" },
+  { id: "copilot",    label: "AI Career Copilot" },
+  { id: "sdg",        label: "SDG Alignment" },
 ];
 
 function CodeBlock({ children }: { children: string }) {
@@ -52,8 +53,8 @@ function DocSection({ id, children }: { id: string; children: React.ReactNode })
   );
 }
 
-export default function Docs({ onNavigate, user, onLogin }: Props) {
-  const [activeSection, setActiveSection] = useState("architecture");
+export default function Docs({ onNavigate, user, onLogin, onLogout }: Props) {
+  const [activeSection, setActiveSection] = useState("overview");
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -102,7 +103,7 @@ export default function Docs({ onNavigate, user, onLogin }: Props) {
           <div className="mt-8 pt-6 border-t border-border">
             <p className="font-mono text-[10px] text-text-muted uppercase tracking-widest mb-3">Version</p>
             <p className="font-mono text-[11px] text-text-secondary">[v1.0] · Aug 2026</p>
-            <p className="font-mono text-[11px] text-text-muted mt-1">API stable</p>
+            <p className="font-mono text-[11px] text-text-muted mt-1">Platform Guide</p>
           </div>
         </aside>
 
@@ -113,214 +114,139 @@ export default function Docs({ onNavigate, user, onLogin }: Props) {
           <div className="mb-10 pb-8 border-b border-border">
             <div className="flex items-center gap-3 mb-3">
               <div className="h-px w-4 bg-border" />
-              <span className="font-mono text-[11px] text-text-muted uppercase tracking-[0.14em]">Technical Reference</span>
+              <span className="font-mono text-[11px] text-text-muted uppercase tracking-[0.14em]">Platform User Guide</span>
             </div>
             <h1 className="font-sans font-bold text-[36px] md:text-[44px] text-text-primary tracking-[-0.02em] leading-[1.1] mb-3">
-              SkillForge Docs
+              SkillForge Documentation
             </h1>
             <p className="font-sans text-[15px] text-[#71717A] leading-[26px] max-w-[520px]">
-              System architecture, scoring methodology, SDG alignment details, and API integration guides for platform developers and institutional integrators.
+              Comprehensive guide on how to audit skills, verify technical competencies, navigate AI career roadmaps, and leverage the real-time AI Career Copilot.
             </p>
           </div>
 
-          {/* ── Architecture ── */}
-          <DocSection id="architecture">
-            <Heading2>System Architecture</Heading2>
+          {/* ── Overview ── */}
+          <DocSection id="overview">
+            <Heading2>Platform Overview & Getting Started</Heading2>
             <Para>
-              SkillForge is a React 19 + Vite 8 single-page application backed by a Python FastAPI service layer. The assessment engine, gap calculator, and AI copilot are implemented as independent microservices communicating over a REST/WebSocket API gateway.
+              SkillForge is designed to bridge the gap between academic theory and production-readiness. This section outlines how to set up your account and begin your journey.
             </Para>
 
-            <Heading3>High-Level Stack</Heading3>
-            <CodeBlock>{`# SkillForge Architecture Overview
-frontend:
-  runtime:  React 19, Vite 8, TypeScript 5.7
-  styling:  Tailwind CSS v4 (@tailwindcss/vite)
-  routing:  History API (pushState + popstate)
-
-backend:
-  gateway:   FastAPI 0.115 + Uvicorn (async)
-  auth:      JWT (HS256) + refresh token rotation
-  db:        PostgreSQL 17 + pgvector 0.7
-  cache:     Redis 7.4 (session + rate-limiting)
-  llm:       Claude claude-sonnet-4-6 via Anthropic SDK
-  rag_index: pgvector cosine similarity (dim=1536)
-
-infra:
-  container:  Docker + docker-compose (dev)
-  deploy:     Kubernetes (StatefulSet for Postgres)
-  ci_cd:      GitHub Actions → ECR → EKS`}</CodeBlock>
-
-            <Heading3>Data Flow: Assessment → Gap → Roadmap</Heading3>
+            <Heading3>Step 1: Account Creation & Authentication</Heading3>
             <Para>
-              When a student completes an assessment session, the result is persisted to <InlineCode>assessment_results</InlineCode> and triggers an async gap recalculation job. The gap engine reads the student's full skill vector, computes the delta against the role threshold, and writes the updated <InlineCode>skill_gap</InlineCode> record. The roadmap generator then patches the student's active roadmap based on the new gap state.
+              Sign in or create an account via Supabase Auth using your email credentials. You can explore the public benchmarks as a guest, or navigate directly to the interactive onboarding funnel to build your profile.
             </Para>
-            <CodeBlock>{`# Assessment lifecycle (simplified)
-POST /api/v1/assessments/{id}/submit
-  → persist answers to assessment_results
-  → enqueue gap_recalculation_job(student_id)
+            <CodeBlock>{`# Authentication Flow
+1. Navigate to the Landing Page
+2. Click "Get Started" or "Sign In"
+3. Enter email and secure password
+4. Complete the 2-step onboarding wizard`}</CodeBlock>
 
-# Async gap job
-gap_engine.calculate(
-  student_vector  = skill_scores[student_id],
-  role_threshold  = role_requirements[target_role],
-  weights         = domain_weights[target_role],
-)
-  → upsert skill_gap record
-  → trigger roadmap_patch if gap delta > 0.05`}</CodeBlock>
+            <Heading3>Step 2: Choosing Your Pathway</Heading3>
+            <Para>
+              Select from 8 specialized domains, such as Web Development, AI/ML Engineering, DevOps, Cloud Engineering, Cyber Security, Mobile App Development, Custom Software, or Game Development. After selecting a pathway, define your current experience level (ranging from Student/Beginner to Senior) to calibrate the baseline.
+            </Para>
 
             <Divider />
           </DocSection>
 
-          {/* ── Scoring ── */}
-          <DocSection id="scoring">
-            <Heading2>Assessment Scoring Formula</Heading2>
+          {/* ── Assessment ── */}
+          <DocSection id="assessment">
+            <Heading2>Skill Auditing & Assessment Flow</Heading2>
             <Para>
-              Each assessment domain produces a normalized score <InlineCode>s ∈ [0.00, 1.00]</InlineCode> using a weighted Item Response Theory (IRT) model. Question difficulty and discrimination parameters are estimated from historical response data.
+              Once your track is established, SkillForge evaluates your technical foundations through an adaptive onboarding funnel.
             </Para>
 
-            <Heading3>Domain Score Calculation</Heading3>
-            <CodeBlock>{`# IRT-based scoring (3PL model)
-P(correct | θ) = c + (1-c) * (1 / (1 + exp(-a*(θ-b))))
-  where:
-    θ = student ability estimate (latent trait)
-    a = item discrimination parameter
-    b = item difficulty parameter
-    c = pseudo-guessing parameter (lower asymptote)
-
-# Final domain score (normalized to [0, 1])
-domain_score = sigmoid(θ_estimated)
-
-# Weighted readiness aggregate
-readiness = Σ(w_i * score_i) / Σ(w_i)
-  where w_i = domain weight for target role`}</CodeBlock>
-
-            <Heading3>Gap Delta Formula</Heading3>
+            <Heading3>Resume Parsing vs. Step-by-Step Selection</Heading3>
             <Para>
-              The gap delta measures how far a student is from role-readiness in each domain. A delta above the critical threshold triggers a roadmap patch and a copilot alert.
+              Option A: Upload a PDF/DOCX resume to auto-detect skills and pre-fill your technical profile using our AI parser. 
+              Option B: Manually select your target sub-track and tick known technologies from the market benchmark checklist.
             </Para>
-            <CodeBlock>{`# Gap delta per domain
-gap_delta[d] = max(0, threshold[d] - score[d])
 
-# Critical gap: delta exceeds 50% of threshold
-is_critical = gap_delta[d] / threshold[d] > 0.5
+            <Heading3>25-Question Adaptive Evaluation</Heading3>
+            <Para>
+              Complete 25 targeted multiple-choice questions (8 Easy, 10 Medium, 7 Hard) tailored to your chosen specialization. The engine focuses on code-based questions and conceptual problem-solving without theoretical barriers. Track your time and navigate between questions seamlessly.
+            </Para>
+            <CodeBlock>{`# Assessment Breakdown (25 Questions)
+Difficulty Distribution:
+- Easy: 8 questions (Core Syntax & Concepts)
+- Medium: 10 questions (Applied Problem Solving)
+- Hard: 7 questions (Architecture & Debugging)
 
-# Overall readiness
-readiness_pct = (1 - mean(gap_delta / threshold)) * 100
+Duration: ~30-45 minutes recommended`}</CodeBlock>
 
-# Example output:
-# domain           score   threshold   delta   critical?
-# python            0.79    0.85       0.06    False
-# system_arch       0.35    0.70       0.35    True  ← CRITICAL
-# cloud_devops      0.20    0.60       0.40    True  ← CRITICAL
-# modern_databases  0.48    0.65       0.17    False`}</CodeBlock>
+            <Divider />
+          </DocSection>
+
+          {/* ── Readiness ── */}
+          <DocSection id="readiness">
+            <Heading2>Understanding Your Readiness Score & Skill Gap</Heading2>
+            <Para>
+              Upon completing the assessment, SkillForge calculates a deterministic skill vector to highlight where you stand in the market.
+            </Para>
+
+            <Heading3>Readiness Matrix Calculation</Heading3>
+            <Para>
+              Your score is calculated against current 2026 industry hiring standards. The dashboard identifies "Mastered Areas" where you excel, and isolates "Critical Delta Gaps" — specific competencies requiring immediate focus before entering the interview loop.
+            </Para>
+
+            <Heading3>Automated Roadmap Generation</Heading3>
+            <Para>
+              Generate a phase-gated 12-week structured learning roadmap with one click. Each milestone contains focused learning objectives, documentation links, and actionable tasks tailored exactly to your Critical Delta Gaps.
+            </Para>
+            <CodeBlock>{`# Sample Roadmap Milestone JSON
+{
+  "phase": "02",
+  "title": "System Architecture Foundations",
+  "duration": "2 Weeks",
+  "objectives": [
+    "Implement caching layers with Redis",
+    "Design horizontal scaling strategies"
+  ],
+  "status": "in_progress"
+}`}</CodeBlock>
+
+            <Divider />
+          </DocSection>
+
+          {/* ── Copilot ── */}
+          <DocSection id="copilot">
+            <Heading2>Interactive Career Copilot & Real-Time Mentorship</Heading2>
+            <Para>
+              SkillForge includes an embedded AI assistant to support you continuously throughout your generated roadmap.
+            </Para>
+
+            <Heading3>Autonomous Advisory</Heading3>
+            <Para>
+              Prompt the AI Career Copilot for debugging guidance, concept explanations, and recommended learning resources. All context-aware answers are grounded in modern developer documentation and your verified skill profile, ensuring you don't get generic or hallucinated advice.
+            </Para>
+            <CodeBlock>{`# Example Copilot Interactions
+User: "How do I implement horizontal scaling for my Node app?"
+Copilot: "Based on your Roadmap Phase 02, I recommend using PM2 
+cluster mode or Docker Swarm. Let's look at a Docker example..."`}</CodeBlock>
 
             <Divider />
           </DocSection>
 
           {/* ── SDG ── */}
           <DocSection id="sdg">
-            <Heading2>SDG 4 & 8 Mapping</Heading2>
+            <Heading2>SDG Alignment & Social Impact</Heading2>
             <Para>
-              SkillForge is designed in alignment with two United Nations Sustainable Development Goals: SDG 4 (Quality Education) and SDG 8 (Decent Work and Economic Growth).
+              SkillForge is engineered to address global systemic challenges in technical education and employment, explicitly mapping to the United Nations Sustainable Development Goals.
             </Para>
 
-            <Heading3>SDG 4 — Quality Education</Heading3>
+            <Heading3>SDG 4: Quality Education</Heading3>
             <Para>
-              SkillForge targets the structural gap between formal CS education and industry competency requirements. By providing deterministic, verified curriculum benchmarks, it enables universities and students in any geography to measure and close the gap to production-readiness without relying on expensive bootcamps or geography-limited mentorship.
-            </Para>
-            <CodeBlock>{`# SDG 4 alignment points
-- Verified curriculum mapped to 2026 hiring benchmarks
-- Free baseline assessment (no credit card required)
-- SDG 4.4: increase youth technical & vocational skills
-- SDG 4.b: scholarship-equivalent career infrastructure
-- Zero prerequisite: any CS student can take assessment`}</CodeBlock>
-
-            <Heading3>SDG 8 — Decent Work and Economic Growth</Heading3>
-            <Para>
-              The platform reduces time-to-employment for CS graduates by replacing unfocused self-study with a deterministic, phase-gated roadmap anchored to verified job requirements. The AI Copilot grounds career advice in real technical documentation rather than hallucinated generalities.
-            </Para>
-            <CodeBlock>{`# SDG 8 alignment points
-- SDG 8.6: reduce proportion of youth NEET
-- Avg time-to-offer: 14 weeks from 62% readiness
-- Interview pass rate: 78% for SkillForge completers
-- Phased roadmap eliminates Tutorial Hell (8.2 productivity)
-- Mentor analytics close advising gap at institutional scale`}</CodeBlock>
-
-            <Divider />
-          </DocSection>
-
-          {/* ── API ── */}
-          <DocSection id="api">
-            <Heading2>API Integration Guide</Heading2>
-            <Para>
-              The SkillForge REST API is versioned under <InlineCode>/api/v1</InlineCode>. All endpoints require a Bearer JWT in the <InlineCode>Authorization</InlineCode> header. Tokens are issued via the <InlineCode>/auth/token</InlineCode> endpoint and expire after 15 minutes; refresh tokens rotate on each use with a 30-day TTL.
+              We are bridging the gap between university computer science curricula and industry hiring standards with open-access verification tools. By providing deterministic benchmarks, we ensure quality technical education is accessible to everyone.
             </Para>
 
-            <Heading3>Authentication</Heading3>
-            <CodeBlock>{`# 1. Exchange credentials for JWT
-POST /api/v1/auth/token
-Content-Type: application/json
-
-{
-  "email":    "aisha@university.edu",
-  "password": "••••••••"
-}
-
-# Response
-{
-  "access_token":  "eyJhbGci...",
-  "refresh_token": "eyJhbGci...",
-  "token_type":    "bearer",
-  "expires_in":    900
-}`}</CodeBlock>
-
-            <Heading3>Fetch Student Skill Vector</Heading3>
-            <CodeBlock>{`# GET /api/v1/students/{student_id}/skill-vector
-Authorization: Bearer eyJhbGci...
-
-# Response
-{
-  "student_id":   "stu_abc123",
-  "target_role":  "Backend Developer",
-  "readiness_pct": 62,
-  "skill_vector": {
-    "python":           { "score": 0.79, "threshold": 0.85, "gap": false },
-    "system_arch":      { "score": 0.35, "threshold": 0.70, "gap": true  },
-    "cloud_devops":     { "score": 0.20, "threshold": 0.60, "gap": true  },
-    "modern_databases": { "score": 0.48, "threshold": 0.65, "gap": false },
-    "applied_ai":       { "score": 0.15, "threshold": 0.40, "gap": true  },
-    "web_systems":      { "score": 0.55, "threshold": 0.75, "gap": false }
-  },
-  "updated_at": "2026-08-20T14:22:31Z"
-}`}</CodeBlock>
-
-            <Heading3>Trigger Copilot Query</Heading3>
-            <CodeBlock>{`# POST /api/v1/copilot/query
-Authorization: Bearer eyJhbGci...
-
-{
-  "student_id": "stu_abc123",
-  "query":      "How do I close my Distributed Systems gap?"
-}
-
-# Streaming response (text/event-stream)
-data: {"type": "tool_call", "tool": "vector_search", "status": "running"}
-data: {"type": "tool_call", "tool": "vector_search", "status": "done", "docs_retrieved": 3}
-data: {"type": "tool_call", "tool": "roadmap_patch", "status": "done"}
-data: {"type": "answer", "text": "Start Phase 03 — Redis Clustering..."}
-data: [DONE]`}</CodeBlock>
-
-            <div className="mt-8 bg-surface border border-border rounded-xl p-5 flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-surface-hover border border-border flex items-center justify-center mt-0.5">
-                <span className="font-mono text-[11px] text-text-muted">i</span>
-              </div>
-              <div>
-                <p className="font-sans font-semibold text-[13px] text-text-primary mb-1">Rate Limits</p>
-                <p className="font-sans text-[13px] text-text-muted leading-[22px]">
-                  Default: 60 requests/min per student token. Mentor tokens: 300 requests/min. Copilot streaming: 10 concurrent connections per institution. Contact <InlineCode>api@skillforge.dev</InlineCode> for enterprise limits.
-                </p>
-              </div>
-            </div>
+            <Heading3>SDG 8: Decent Work & Economic Growth</Heading3>
+            <Para>
+              SkillForge eliminates "tutorial hell" and significantly reduces time-to-employment through deterministic, actionable career paths. This drives sustainable economic growth by efficiently connecting qualified talent to modern technical roles.
+            </Para>
+            <CodeBlock>{`# Core Impact Metrics
+- Tutorial Hell Elimination: 100% focused learning
+- Time-to-Employment: Reduced via actionable roadmaps
+- Accessibility: Open-access benchmarks for all`}</CodeBlock>
           </DocSection>
 
         </main>
