@@ -2,7 +2,6 @@ import os
 from typing import List, Dict, Optional
 from supabase import create_client, Client
 import google.generativeai as genai
-from fastembed import TextEmbedding
 
 class KnowledgeBaseRetriever:
     def __init__(self):
@@ -14,8 +13,14 @@ class KnowledgeBaseRetriever:
             raise ValueError("Supabase credentials are required in environment.")
             
         self.supabase: Client = create_client(self.supabase_url, self.supabase_key)
-        
-        self.embedding_model = TextEmbedding(model_name="BAAI/bge-base-en-v1.5")
+        self._embedding_model = None
+
+    @property
+    def embedding_model(self):
+        if self._embedding_model is None:
+            from fastembed import TextEmbedding
+            self._embedding_model = TextEmbedding(model_name="BAAI/bge-base-en-v1.5")
+        return self._embedding_model
 
     def embed_query(self, query_text: str) -> List[float]:
         """Converts query text into a 768-dimensional float vector."""
