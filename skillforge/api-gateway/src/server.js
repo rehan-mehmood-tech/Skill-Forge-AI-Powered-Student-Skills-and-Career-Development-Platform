@@ -11,11 +11,25 @@ const app = express();
 // Security Headers
 app.use(helmet());
 
-// CORS config
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'http://localhost:3000';
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
-  origin: ALLOWED_ORIGIN
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Blocked by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-internal-key']
 }));
+app.options('*', cors());
 
 // Body parsing
 app.use(express.json());
@@ -49,8 +63,7 @@ app.use('/api/ai', aiProxyRouter);
 app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'healthy', 
-    service: 'api-gateway',
-    redis: redisClient?.status === 'ready' ? 'connected' : 'memory-fallback'
+    service: 'api-gateway'
   });
 });
 

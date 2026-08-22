@@ -69,7 +69,7 @@ function pathToView(path: string): View {
 
 export default function App() {
   const [view, setView] = useState<View>(() => pathToView(window.location.pathname));
-  const { user: authUser } = useAuth();
+  const { user: authUser, profile, isLoading } = useAuth();
   const [user, setUser] = useState<AppUser | null>(null);
 
   useEffect(() => {
@@ -81,10 +81,19 @@ export default function App() {
     
     // Auth Persistence from AuthContext
     if (authUser) {
+      if (!isLoading && !profile && view !== "onboarding") {
+        history.pushState({}, "", "/onboarding");
+        if (isMounted) setView("onboarding");
+      }
+
       const metadata = authUser.user_metadata || {};
       const isMentor = metadata.role === "mentor";
       const baseUser = isMentor ? MENTOR_USER : STUDENT_USER;
-      setUser({ ...baseUser, name: metadata.full_name || metadata.name || baseUser.name });
+      setUser({ 
+        ...baseUser, 
+        name: metadata.full_name || metadata.name || baseUser.name,
+        targetRole: profile?.target_role || baseUser.targetRole
+      });
     } else {
       setUser(null);
     }
@@ -93,7 +102,7 @@ export default function App() {
       isMounted = false;
       window.removeEventListener("popstate", handler);
     };
-  }, [authUser]);
+  }, [authUser, profile, isLoading, view]);
 
   function navigate(v: View) {
     const path = VIEW_TO_PATH[v] ?? "/";
@@ -127,7 +136,18 @@ export default function App() {
 
   return (
     <>
-      <Toaster position="top-right" />
+      <Toaster 
+        position="top-right" 
+        toastOptions={{
+          style: {
+            background: '#0f172a',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            color: '#f1f5f9',
+            fontFamily: 'monospace',
+            borderRadius: '0.5rem',
+          }
+        }} 
+      />
       {renderView()}
       {user && <FloatingAgentWidget />}
     </>

@@ -176,8 +176,14 @@ function TerminalCard({ title, lines, laser }: { title: string; lines: { c: stri
 
 function HeroSection({ onNavigate, user, onLogin }: { onNavigate: (v: View) => void; user: AppUser | null; onLogin: (u: AppUser) => void }) {
   const [auth,   setAuth]   = useState(false);
+  const [authRedirect, setAuthRedirect] = useState<View | undefined>();
   const track  = useTypewriter(TRACKS);
   const cursor = useBlink(530);
+
+  const handleAuth = (redirectTo: View) => {
+    setAuthRedirect(redirectTo);
+    setAuth(true);
+  };
 
   const terminalLines = user ? personalTerminalLines(user) : PUBLIC_TERMINAL_LINES;
 
@@ -237,10 +243,10 @@ function HeroSection({ onNavigate, user, onLogin }: { onNavigate: (v: View) => v
             </>
           ) : (
             <>
-              <button onClick={() => setAuth(true)} className="btn-cta h-10 px-6 rounded-lg bg-white text-black text-[13px] font-semibold hover:bg-zinc-100 cursor-pointer">
+              <button onClick={() => handleAuth("assessment")} className="btn-cta h-10 px-6 rounded-lg bg-white text-black text-[13px] font-semibold hover:bg-zinc-100 cursor-pointer">
                 Audit Your Skillset →
               </button>
-              <button onClick={() => onNavigate("dashboard")} className="btn-cta h-10 px-5 rounded-lg border border-border bg-surface text-text-secondary hover:border-text-muted hover:bg-surface-hover hover:text-text-primary text-[13px] font-medium cursor-pointer">
+              <button onClick={() => handleAuth("dashboard")} className="btn-cta h-10 px-5 rounded-lg border border-border bg-surface text-text-secondary hover:border-text-muted hover:bg-surface-hover hover:text-text-primary text-[13px] font-medium cursor-pointer">
                 Explore 2026 CS Benchmarks
               </button>
               <div className="flex items-center gap-1.5 ml-1">
@@ -277,7 +283,7 @@ function HeroSection({ onNavigate, user, onLogin }: { onNavigate: (v: View) => v
         </div>
       </div>
 
-      {auth && <AuthModal onClose={() => setAuth(false)} onNavigate={onNavigate} onLogin={onLogin} />}
+      {auth && <AuthModal onClose={() => setAuth(false)} onNavigate={onNavigate} onLogin={onLogin} redirectTo={authRedirect} />}
     </section>
   );
 }
@@ -642,6 +648,12 @@ function CopilotTerminal() {
 function FinalCTA({ onNavigate, user, onLogin }: { onNavigate: (v: View) => void; user: AppUser | null; onLogin: (u: AppUser) => void }) {
   const { ref, inView } = useInView(0.25);
   const [auth, setAuth] = useState(false);
+  const [authRedirect, setAuthRedirect] = useState<View | undefined>();
+
+  const handleAuth = (redirectTo: View) => {
+    setAuthRedirect(redirectTo);
+    setAuth(true);
+  };
 
   return (
     <section className="px-6 py-28 flex flex-col items-center text-center">
@@ -662,13 +674,13 @@ function FinalCTA({ onNavigate, user, onLogin }: { onNavigate: (v: View) => void
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <button
-            onClick={() => user ? onNavigate("assessment") : setAuth(true)}
+            onClick={() => user ? onNavigate("assessment") : handleAuth("assessment")}
             className="btn-cta w-full sm:w-auto h-11 px-8 rounded-lg bg-white text-black text-[13px] font-semibold hover:bg-zinc-100 cursor-pointer"
           >
             {user ? `Resume ${user.activePhase} →` : "Audit My Skillset — Free →"}
           </button>
           <button
-            onClick={() => onNavigate("dashboard")}
+            onClick={() => user ? onNavigate("dashboard") : handleAuth("dashboard")}
             className="btn-cta w-full sm:w-auto h-11 px-6 rounded-lg border border-border bg-surface text-text-secondary hover:border-text-muted hover:bg-surface-hover hover:text-text-primary text-[13px] font-medium cursor-pointer"
           >
             {user ? "Open Dashboard" : "Explore 2026 CS Benchmarks"}
@@ -678,7 +690,7 @@ function FinalCTA({ onNavigate, user, onLogin }: { onNavigate: (v: View) => void
           {user ? `Active Track: ${user.targetRole} · Readiness: ${user.readinessPct}%` : "No credit card · Free assessment · Roadmap in 5 minutes"}
         </p>
       </div>
-      {auth && <AuthModal onClose={() => setAuth(false)} onNavigate={onNavigate} onLogin={onLogin} />}
+      {auth && <AuthModal onClose={() => setAuth(false)} onNavigate={onNavigate} onLogin={onLogin} redirectTo={authRedirect} />}
     </section>
   );
 }
