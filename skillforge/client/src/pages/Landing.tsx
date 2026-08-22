@@ -257,30 +257,29 @@ function HeroSection({ onNavigate, user, onLogin }: { onNavigate: (v: View) => v
           )}
         </div>
 
-        <div className="mt-10 animate-fade-up delay-200">
-          <TerminalCard
-            title={user ? `skill_vector_${user.name.split(" ")[0].toLowerCase()}.py` : "cs_competency_audit.py"}
-            lines={terminalLines}
-            laser
-          />
-        </div>
+        {user && (
+          <>
+            <div className="mt-10 animate-fade-up delay-200">
+              <TerminalCard
+                title={`skill_vector_${user.name.split(" ")[0].toLowerCase()}.py`}
+                lines={terminalLines}
+                laser
+              />
+            </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2 animate-fade-up delay-300">
-          <span className="font-mono text-[10px] text-text-muted">
-            {user ? "PERSONALIZED SKILL VECTOR" : "LIVE DIAGNOSTIC PREVIEW"}
-          </span>
-          <div className="h-px w-4 bg-border" />
-          {user
-            ? user.skillVector.slice(0, 3).map((s) => (
+            <div className="mt-4 flex flex-wrap items-center gap-2 animate-fade-up delay-300">
+              <span className="font-mono text-[10px] text-text-muted">
+                PERSONALIZED SKILL VECTOR
+              </span>
+              <div className="h-px w-4 bg-border" />
+              {user.skillVector.slice(0, 3).map((s) => (
                 <span key={s.domain} className={`font-mono text-[11px] border rounded-md px-2 py-0.5 bg-surface ${s.gap ? "text-danger border-danger" : "text-success border-success"}`}>
                   [{s.domain} {s.score.toFixed(2)}]
                 </span>
-              ))
-            : ["[CS Foundations 0.82]", "[System Arch 0.35 ⚠]", "[Readiness 52%]"].map((tag) => (
-                <span key={tag} className="font-mono text-[11px] text-text-secondary border border-border rounded-md px-2 py-0.5 bg-surface">{tag}</span>
-              ))
-          }
-        </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {auth && <AuthModal onClose={() => setAuth(false)} onNavigate={onNavigate} onLogin={onLogin} redirectTo={authRedirect} />}
@@ -717,11 +716,15 @@ export default function Landing({ onNavigate, user, onLogin, onLogout }: {
       <CSGraduateDilemma />
       <FourPillarMethodology />
 
-      <div className="h-px bg-border mx-6 md:mx-10" />
-      <RoadmapEngine />
+      {user && (
+        <>
+          <div className="h-px bg-border mx-6 md:mx-10" />
+          <RoadmapEngine />
 
-      <div className="h-px bg-border mx-6 md:mx-10" />
-      <CopilotTerminal />
+          <div className="h-px bg-border mx-6 md:mx-10" />
+          <CopilotTerminal />
+        </>
+      )}
 
       <div className="h-px bg-border mx-6 md:mx-10" />
       <FinalCTA onNavigate={onNavigate} user={user} onLogin={onLogin} />

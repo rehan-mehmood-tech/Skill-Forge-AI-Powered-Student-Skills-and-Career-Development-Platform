@@ -55,6 +55,7 @@ async def global_exception_handler(request, exc):
         content={"error": "Internal AI Service Error", "detail": "An unexpected error occurred. Please try again later."}
     )
 
+@app.get("/")
 @app.get("/health")
 def health_check():
     return {"status": "healthy", "service": "ai-service"}
