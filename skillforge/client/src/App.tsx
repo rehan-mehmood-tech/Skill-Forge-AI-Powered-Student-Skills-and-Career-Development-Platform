@@ -70,6 +70,25 @@ export default function App() {
   const { user: authUser, profile, isLoading, logout: authLogout } = useAuth();
   const [user, setUser] = useState<AppUser | null>(null);
 
+  // Background Keep-Alive Ping Engine
+  useEffect(() => {
+    const pingHealth = async () => {
+      try {
+        const GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:5000';
+        await fetch(`${GATEWAY_URL}/health`);
+      } catch (error) {
+        // Silently fail on network errors during keep-alive ping
+      }
+    };
+    
+    // Initial ping on mount
+    pingHealth();
+    
+    // 9 minutes (540,000 ms) interval to keep Render services awake
+    const interval = setInterval(pingHealth, 540000);
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
     const handler = () => {

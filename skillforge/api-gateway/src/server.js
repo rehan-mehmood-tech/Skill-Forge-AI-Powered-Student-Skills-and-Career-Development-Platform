@@ -63,10 +63,22 @@ app.use('/api/assessment', aiProxyRouter); // Map to the same proxy for now, we'
 app.use('/api/roadmap', aiProxyRouter);
 
 // Health Endpoint
-app.get('/health', (req, res) => {
+const axios = require('axios');
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'https://skillforge-ai-service.onrender.com';
+
+app.get('/health', async (req, res) => {
+  let aiStatus = 'unreachable';
+  try {
+    const aiResponse = await axios.get(`${AI_SERVICE_URL}/health`, { timeout: 3000 });
+    aiStatus = aiResponse.data.status || 'healthy';
+  } catch (err) {
+    console.warn('AI Service health check failed in gateway');
+  }
+
   res.status(200).json({ 
     status: 'healthy', 
-    service: 'api-gateway'
+    service: 'api-gateway',
+    ai_service: aiStatus
   });
 });
 

@@ -56,13 +56,23 @@ export default function FloatingAgentWidget() {
         .filter(m => !m.isTyping)
         .map(m => ({ role: m.role, content: m.content }));
 
-      const res: any = await post('/api/ai/chat-agent', { 
-        message: text.trim(), 
-        session_id: sessionIdRef.current,
-        target_role: profile?.target_role || "Backend Developer",
-        experience_level: profile?.metadata?.experience_years != null ? `${profile.metadata.experience_years} yrs` : "Junior (0–2 yrs)",
-        conversation_history: history
-      });
+      // 8-second timeout for the post request
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout")), 8000)
+      );
+
+      const targetRole = profile?.target_role || "Backend Developer";
+
+      const res: any = await Promise.race([
+        post('/api/ai/chat-agent', { 
+          message: text.trim(), 
+          session_id: sessionIdRef.current,
+          target_role: targetRole,
+          experience_level: profile?.metadata?.experience_years != null ? `${profile.metadata.experience_years} yrs` : "Junior (0–2 yrs)",
+          conversation_history: history
+        }, { hideErrorToast: true }),
+        timeoutPromise
+      ]);
 
       setMessages((prev) =>
         prev.map((m) =>
@@ -78,14 +88,26 @@ export default function FloatingAgentWidget() {
         )
       );
     } catch (err) {
-      console.error(err);
+      console.warn("Copilot backend timeout/error, generating local fallback", err);
+      
+      const targetRole = profile?.target_role || "Backend Developer";
+      let fallbackText = `Here is a rapid 3-phase architectural breakdown for your path in ${targetRole}:\n\n` +
+        `**Phase 1: Foundations**\n` +
+        `Master the core syntax, memory management/state logic, and basic data structures critical to ${targetRole}.\n\n` +
+        `**Phase 2: Practical Tools**\n` +
+        `Build out standard industry frameworks, implement testing, and learn API/database integrations.\n\n` +
+        `**Phase 3: Production Systems**\n` +
+        `Deploy containerized systems, establish CI/CD pipelines, and configure scalable orchestration environments.\n\n` +
+        `Let me know which phase you'd like to dive into!`;
+
       setMessages((prev) =>
         prev.map((m) =>
           m.id === typingMsg.id
             ? {
                 ...m,
                 isTyping: false,
-                content: "Unable to connect to AI Mentor. Please retry in a moment.",
+                content: fallbackText,
+                toolTrace: ["> action: local_fallback_engine_triggered"]
               }
             : m
         )

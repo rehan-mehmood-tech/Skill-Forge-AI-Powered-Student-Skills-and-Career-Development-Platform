@@ -25,6 +25,11 @@ apiClient.interceptors.response.use(
     return response.data;
   },
   (error) => {
+    // Check if the request explicitly asks to hide error toasts
+    if (error.config && (error.config as any).hideErrorToast) {
+      return Promise.reject(error);
+    }
+    
     if (error.response) {
       switch (error.response.status) {
         case 401:

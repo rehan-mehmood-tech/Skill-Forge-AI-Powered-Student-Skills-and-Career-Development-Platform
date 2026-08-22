@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { View, AppUser } from "../App";
 import { post } from "../lib/api";
 import AppShell from "../components/AppShell";
@@ -206,6 +206,34 @@ function TopicNode({
 export default function Roadmap({ onNavigate, user, onLogout }: Props) {
   const [phases, setPhases] = useState<Phase[]>(INITIAL_PHASES);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  useEffect(() => {
+    const fallbackStr = localStorage.getItem("skillforge_fallback_roadmap");
+    if (fallbackStr) {
+      try {
+        const response = JSON.parse(fallbackStr);
+        if (Array.isArray(response)) {
+          const newPhases = response.map((p: any, i: number) => ({
+            id: `p${i + 1}`,
+            label: `Phase 0${i + 1}`,
+            name: p.name || p.title || p.phase_name,
+            status: i === 0 ? "active" : "future",
+            progress: `0/${p.topics?.length || 0} topics`,
+            topics: (p.topics || []).map((t: any, j: number) => ({
+              id: `t${i}_${j}`,
+              name: t.name || t.title,
+              status: "pending",
+              projects: t.projects || [],
+              resources: t.resources || []
+            }))
+          }));
+          setPhases(newPhases);
+        }
+      } catch (e) {
+        console.error("Failed to parse fallback roadmap", e);
+      }
+    }
+  }, []);
 
   const updateTopicStatus = (topicId: string, newStatus: TopicStatus) => {
     setPhases((prev) =>
