@@ -59,7 +59,7 @@ const forwardRequest = async (req, res, endpoint) => {
     if (error.response) {
       res.status(error.response.status).json(error.response.data);
     } else {
-      res.status(503).json({ error: "AI Service is temporarily unavailable. Please try again later." });
+      res.status(502).json({ error: 'AI Service currently unreachable. Please retry.' });
     }
   }
 };
@@ -84,7 +84,7 @@ const forwardChatRequest = async (req, res) => {
     if (error.response) {
       res.status(error.response.status).json(error.response.data);
     } else {
-      res.status(503).json({ error: "AI Service is temporarily unavailable. Please try again later." });
+      res.status(502).json({ error: 'AI Service currently unreachable. Please retry.' });
     }
   }
 };
@@ -123,7 +123,7 @@ router.post('/upload-cv', uploadLimiter, upload.single('file'), async (req, res)
     if (error.response) {
       res.status(error.response.status).json(error.response.data);
     } else {
-      res.status(503).json({ error: "AI Service is temporarily unavailable. Please try again later." });
+      res.status(502).json({ error: 'AI Service currently unreachable. Please retry.' });
     }
   }
 });

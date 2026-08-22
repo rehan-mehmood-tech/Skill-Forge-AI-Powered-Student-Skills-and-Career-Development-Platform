@@ -255,7 +255,7 @@ function HeroSection({ onNavigate, user, onLogin }: { onNavigate: (v: View) => v
           <>
             <div className="mt-10 animate-fade-up delay-200">
               <TerminalCard
-                title={`skill_vector_${user.name.split(" ")[0].toLowerCase()}.py`}
+                title={`skill_vector_${(user?.name || "student").split(" ")[0].toLowerCase()}.py`}
                 lines={terminalLines}
                 laser
               />
