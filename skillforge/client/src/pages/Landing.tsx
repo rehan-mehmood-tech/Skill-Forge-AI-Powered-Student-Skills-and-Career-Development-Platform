@@ -177,8 +177,6 @@ function TerminalCard({ title, lines, laser }: { title: string; lines: { c: stri
 function HeroSection({ onNavigate, user, onLogin }: { onNavigate: (v: View) => void; user: AppUser | null; onLogin: (u: AppUser) => void }) {
   const [auth,   setAuth]   = useState(false);
   const [authRedirect, setAuthRedirect] = useState<View | undefined>();
-  const track  = useTypewriter(TRACKS);
-  const cursor = useBlink(530);
 
   const handleAuth = (redirectTo?: View) => {
     setAuthRedirect(redirectTo);
@@ -198,15 +196,11 @@ function HeroSection({ onNavigate, user, onLogin }: { onNavigate: (v: View) => v
           </span>
         </div>
 
-        {/* Public — typewriter */}
+        {/* Public — generic hero */}
         {!user && (
           <h1 className="mb-5 animate-fade-up delay-50">
             <span className="block font-sans font-bold text-[40px] md:text-[58px] text-text-primary tracking-[-0.025em] leading-[1.06]">
-              From Generalist CS Student To
-            </span>
-            <span className="flex items-baseline gap-2 font-sans font-bold text-[40px] md:text-[58px] tracking-[-0.025em] leading-[1.06]">
-              <span className="text-text-secondary">{track}</span>
-              <span className="font-mono text-[36px] md:text-[52px]" style={{ color: "#FAFAFA", opacity: cursor ? 1 : 0, lineHeight: 1 }}>▋</span>
+              Architect Your Engineering Career
             </span>
           </h1>
         )}
@@ -244,10 +238,10 @@ function HeroSection({ onNavigate, user, onLogin }: { onNavigate: (v: View) => v
           ) : (
             <>
               <button onClick={() => handleAuth("landing")} className="btn-cta h-10 px-6 rounded-lg bg-white text-black text-[13px] font-semibold hover:bg-zinc-100 cursor-pointer">
-                Audit Your Skillset →
+                Audit Your Skill Set →
               </button>
               <button onClick={() => handleAuth("dashboard")} className="btn-cta h-10 px-5 rounded-lg border border-border bg-surface text-text-secondary hover:border-text-muted hover:bg-surface-hover hover:text-text-primary text-[13px] font-medium cursor-pointer">
-                Explore 2026 CS Benchmarks
+                Explore Benchmarks
               </button>
               <div className="flex items-center gap-1.5 ml-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-success" />
