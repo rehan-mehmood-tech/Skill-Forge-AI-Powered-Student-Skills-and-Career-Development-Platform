@@ -9,6 +9,8 @@ class GenerateRoadmapRequest(BaseModel):
     student_id: str
     target_role: str
     timeframe_weeks: Optional[int] = 12
+    experience_level: Optional[str] = "Beginner"
+    answers: Optional[List[Dict[str, Any]]] = None
 
 class ChatAgentRequest(BaseModel):
     student_id: str

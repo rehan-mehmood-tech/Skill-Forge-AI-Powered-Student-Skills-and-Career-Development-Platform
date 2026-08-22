@@ -6,6 +6,7 @@ from langchain_core.messages import HumanMessage
 from app.core.skill_analyzer import SkillAnalyzer
 from app.core.roadmap_generator import RoadmapGenerator
 from app.core.skill_gap_calculator import SkillGapCalculator
+from app.core.question_generator import QuestionGenerator
 from app.rag.retriever import KnowledgeBaseRetriever
 from app.agent.graph import app_graph
 from app.agent.tools import supabase
@@ -46,25 +47,7 @@ async def analyze_skills(req: AnalyzeSkillsRequest):
 @router.post("/assessment/questions")
 async def generate_assessment_questions(req: AssessmentQuestionsRequest):
     try:
-        # For now, generate the questions directly in python to act as the backend API
-        # We can simulate the 25-MCQ dynamic logic here
-        import random
-        
-        questions = []
-        for i in range(25):
-            difficulty = "Easy" if i < 8 else ("Medium" if i < 18 else "Hard")
-            questions.append({
-                "text": f"Sample dynamic technical question {i + 1} for {req.sub} ({req.domain}). Which of the following is correct?",
-                "options": [
-                    {"label": "A", "text": "Option A - dynamic"},
-                    {"label": "B", "text": "Option B - dynamic"},
-                    {"label": "C", "text": "Option C - dynamic"},
-                    {"label": "D", "text": "Option D - dynamic"},
-                ],
-                "correctIndex": random.randint(0, 3),
-                "difficulty": difficulty
-            })
-            
+        questions = QuestionGenerator.generate(domain=req.domain, sub=req.sub, count=25)
         return {"questions": questions}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -72,11 +55,33 @@ async def generate_assessment_questions(req: AssessmentQuestionsRequest):
 @router.post("/generate-roadmap")
 async def generate_roadmap_endpoint(req: GenerateRoadmapRequest):
     try:
-        res = supabase.table("profiles").select("skill_vector").eq("id", req.student_id).execute()
-        if not res.data:
-            raise HTTPException(status_code=404, detail="Student profile not found")
+        skill_vector = {}
+        overall_readiness = 0
+        if req.answers:
+            correct_count = sum(1 for a in req.answers if a.get("isCorrect"))
+            total = len(req.answers)
+            overall_readiness = round((correct_count / total) * 100) if total > 0 else 0
             
-        skill_vector = res.data[0].get("skill_vector", {})
+            # Simple heuristic mapping for the prototype
+            skill_vector = {
+                "python": min(1.0, (overall_readiness / 100.0) + 0.1),
+                "system_arch": max(0.0, (overall_readiness / 100.0) - 0.2),
+                "cloud_devops": max(0.0, (overall_readiness / 100.0) - 0.3)
+            }
+        else:
+            res = supabase.table("profiles").select("skill_vector", "overall_readiness").eq("id", req.student_id).execute()
+            if res.data:
+                skill_vector = res.data[0].get("skill_vector", {})
+                overall_readiness = res.data[0].get("overall_readiness", 0)
+
+        # Update profile with newly calculated metrics
+        if req.student_id and req.student_id != "temp-id":
+            supabase.table("profiles").update({
+                "skill_vector": skill_vector,
+                "overall_readiness": overall_readiness,
+                "target_role": req.target_role,
+                "active_phase": "Phase 01: Foundations"
+            }).eq("id", req.student_id).execute()
         gap_report = SkillGapCalculator.identify_gaps(skill_vector, req.target_role)
         
         resources_res = supabase.table("learning_resources").select("*").eq("is_active", True).execute()
