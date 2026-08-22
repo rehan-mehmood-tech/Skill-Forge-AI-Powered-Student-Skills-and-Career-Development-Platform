@@ -20,7 +20,13 @@ class AssessmentQuestionsRequest(BaseModel):
     student_id: Optional[str] = None
 
 router = APIRouter(prefix="/api", tags=["core_api"])
-cv_parser_service = CVParser()
+cv_parser_service = None
+
+def get_cv_parser():
+    global cv_parser_service
+    if cv_parser_service is None:
+        cv_parser_service = CVParser()
+    return cv_parser_service
 
 
 @router.post("/analyze-skills")
@@ -134,7 +140,8 @@ async def upload_cv(file: UploadFile = File(...), student_id: str = Form(...)):
     
     try:
         contents = await file.read()
-        result = cv_parser_service.parse_cv_bytes(contents, student_id)
+        parser = get_cv_parser()
+        result = parser.parse_cv_bytes(contents, student_id)
         return result.model_dump()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to process CV: {str(e)}")

@@ -17,8 +17,7 @@ const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000';
 const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY;
 
 if (!INTERNAL_API_KEY) {
-  console.error("CRITICAL: INTERNAL_API_KEY environment variable is not set!");
-  process.exit(1);
+  console.warn("WARNING: INTERNAL_API_KEY environment variable is not set! Using fallback for development.");
 }
 
 const redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
