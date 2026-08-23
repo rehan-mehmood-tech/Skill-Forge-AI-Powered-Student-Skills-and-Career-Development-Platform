@@ -197,62 +197,29 @@ Each phase object must have the exact following structure:
 @router.post("/chat-agent")
 async def chat_agent(req: ChatAgentRequest):
     try:
-        from langchain_core.messages import AIMessage, HumanMessage
-        messages = []
-        if req.conversation_history:
-            for msg in req.conversation_history:
-                if msg.get("role") == "user":
-                    messages.append(HumanMessage(content=msg.get("content", "")))
-                elif msg.get("role") == "assistant":
-                    messages.append(AIMessage(content=msg.get("content", "")))
-        messages.append(HumanMessage(content=req.message))
+        from langchain_groq import ChatGroq
+        from langchain_core.messages import SystemMessage, HumanMessage
+        import os
 
-        state = {
-            "messages": messages,
-            "student_id": req.student_id,
-            "target_role": req.target_role,
-            "skill_gaps": None,
-            "roadmap_data": None,
+        llm = ChatGroq(
+            model_name="llama-3.3-70b-versatile",
+            temperature=0.3,
+            api_key=os.getenv("GROQ_API_KEY")
+        )
+        sys_prompt = "You are the SkillForge AI Career Copilot. Give concise, actionable tech career advice."
+        res = llm.invoke([SystemMessage(content=sys_prompt), HumanMessage(content=req.message)])
+        return {
+            "response": res.content,
+            "action_taken": "direct_llm",
             "citations": []
         }
-        
-        result = app_graph.invoke(state)
-        final_messages = result.get("messages", [])
-        if not final_messages:
-            raise HTTPException(status_code=500, detail="Agent returned no messages")
-            
-        final_message = final_messages[-1]
-        
-        return {
-            "response": final_message.content,
-            "action_taken": "chat",
-            "citations": result.get("citations", [])
-        }
     except Exception as e:
-        print(f"Graph agent failed: {str(e)}. Falling back to direct LLM.")
-        try:
-            from langchain_groq import ChatGroq
-            from langchain_core.messages import HumanMessage
-            import os
-            
-            direct_llm = ChatGroq(
-                model_name=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
-                temperature=0.2,
-                api_key=os.getenv("GROQ_API_KEY")
-            )
-            response = direct_llm.invoke([HumanMessage(content=req.message)])
-            return {
-                "response": response.content,
-                "action_taken": "direct_llm",
-                "citations": []
-            }
-        except Exception as llm_e:
-            print(f"Direct LLM fallback failed: {str(llm_e)}")
-            return {
-                "response": "I'm currently experiencing technical difficulties.",
-                "action_taken": "error_fallback",
-                "citations": []
-            }
+        print(f"Direct LLM fallback failed: {str(e)}")
+        return {
+            "response": "I'm currently experiencing technical difficulties.",
+            "action_taken": "error_fallback",
+            "citations": []
+        }
 
 @router.post("/rag-query")
 async def rag_query(req: RagQueryRequest):

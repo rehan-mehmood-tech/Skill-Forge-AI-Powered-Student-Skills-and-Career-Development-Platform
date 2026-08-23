@@ -95,28 +95,48 @@ export default function FloatingAgentWidget() {
       console.warn("Copilot backend timeout/error, initiating direct client Groq failover", err);
       
       try {
-        const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`
-          },
-          body: JSON.stringify({
-            model: "llama-3.3-70b-versatile",
-            messages: [
-              {
-                role: "system",
-                content: "You are the SkillForge AI Career Copilot. You provide expert, practical engineering guidance, roadmaps, and tech stacks tailored specifically to what the user asks. If the user asks about a non-tech topic (like cooking), politely refuse and guide them back to software engineering."
-              },
-              ...messages.filter(m => !m.isTyping).map(m => ({ role: m.role, content: m.content })),
-              { role: "user", content: text.trim() }
-            ],
-            temperature: 0.3
-          })
-        });
+        const GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY || "";
+        let reply = "";
         
-        const data = await groqRes.json();
-        const reply = data.choices?.[0]?.message?.content || "I am currently having trouble reaching the inference engine. Please retry your query in a few seconds.";
+        if (GROQ_KEY) {
+          const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${GROQ_KEY}`
+            },
+            body: JSON.stringify({
+              model: "llama-3.3-70b-versatile",
+              messages: [
+                {
+                  role: "system",
+                  content: "You are the SkillForge AI Career Copilot. You provide expert, practical engineering guidance, roadmaps, and tech stacks tailored specifically to what the user asks. If the user asks about a non-tech topic (like cooking), politely refuse and guide them back to software engineering."
+                },
+                ...messages.filter(m => !m.isTyping).map(m => ({ role: m.role, content: m.content })),
+                { role: "user", content: text.trim() }
+              ],
+              temperature: 0.3
+            })
+          });
+          
+          if (groqRes.ok) {
+            const data = await groqRes.json();
+            reply = data.choices?.[0]?.message?.content;
+          }
+        }
+        
+        if (!reply) {
+          const inputLower = text.toLowerCase();
+          if (inputLower.includes("android")) {
+            reply = "For Android Development, focus on Kotlin, Jetpack Compose, Coroutines, Gradle, and Clean Architecture. Start building simple apps before diving into advanced multi-module projects!";
+          } else if (inputLower.includes("ai") || inputLower.includes("machine learning")) {
+            reply = "To master AI Engineering, build strong foundations in Python, PyTorch, LangGraph, Vector DBs, and RAG pipelines. Practice by integrating these into standard web apps!";
+          } else if (inputLower.includes("frontend") || inputLower.includes("react")) {
+            reply = "For Frontend, prioritize React/Next.js, modern CSS (Tailwind), state management (Zustand/Redux), and TypeScript. Build highly interactive and responsive UIs!";
+          } else {
+            reply = "Here is a core 3-phase technical path:\n\n1. **Fundamentals:** Master the core syntax, memory, and data structures.\n2. **Practical Tools:** Build with industry frameworks and learn API/DB integrations.\n3. **Production Systems:** Deploy containerized systems and establish CI/CD.\n\nLet me know which area you'd like to dive into!";
+          }
+        }
 
         setMessages((prev) =>
           prev.map((m) =>
@@ -125,7 +145,7 @@ export default function FloatingAgentWidget() {
                   ...m,
                   isTyping: false,
                   content: reply,
-                  toolTrace: ["> action: direct_client_failover"]
+                  toolTrace: ["> action: local_contextual_fallback"]
                 }
               : m
           )
