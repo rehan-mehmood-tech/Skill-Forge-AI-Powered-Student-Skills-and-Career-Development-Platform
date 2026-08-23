@@ -21,13 +21,18 @@ if (!process.env.INTERNAL_API_KEY) {
 }
 
 let redisClient = null;
-try {
-  redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
-  redisClient.on('error', (err) => {
-    console.warn('Redis connection failed:', err.message);
-  });
-} catch (e) {
-  console.warn('Redis initialization failed');
+if (process.env.REDIS_URL) {
+  try {
+    redisClient = new Redis(process.env.REDIS_URL, {
+      lazyConnect: true,
+      maxRetriesPerRequest: 0
+    });
+    redisClient.on('error', (err) => {
+      console.warn('Redis connection failed:', err.message);
+    });
+  } catch (e) {
+    console.warn('Redis initialization failed');
+  }
 }
 
 const createLimiter = (maxRequests, windowMinutes) => {
@@ -38,7 +43,7 @@ const createLimiter = (maxRequests, windowMinutes) => {
     standardHeaders: true,
     legacyHeaders: false,
   };
-  if (redisClient && process.env.REDIS_URL) {
+  if (redisClient) {
     options.store = new RedisStore({
       sendCommand: (...args) => redisClient.call(...args),
     });
