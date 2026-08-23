@@ -56,9 +56,9 @@ export default function FloatingAgentWidget() {
         .filter(m => !m.isTyping)
         .map(m => ({ role: m.role, content: m.content }));
 
-      // 8-second timeout for the post request
+      // 30-second timeout for the post request
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Timeout")), 8000)
+        setTimeout(() => reject(new Error("Timeout")), 30000)
       );
 
       const targetRole = profile?.target_role || "Backend Developer";
@@ -88,17 +88,7 @@ export default function FloatingAgentWidget() {
         )
       );
     } catch (err) {
-      console.warn("Copilot backend timeout/error, generating local fallback", err);
-      
-      const targetRole = profile?.target_role || "Backend Developer";
-      let fallbackText = `Here is a rapid 3-phase architectural breakdown for your path in ${targetRole}:\n\n` +
-        `**Phase 1: Foundations**\n` +
-        `Master the core syntax, memory management/state logic, and basic data structures critical to ${targetRole}.\n\n` +
-        `**Phase 2: Practical Tools**\n` +
-        `Build out standard industry frameworks, implement testing, and learn API/database integrations.\n\n` +
-        `**Phase 3: Production Systems**\n` +
-        `Deploy containerized systems, establish CI/CD pipelines, and configure scalable orchestration environments.\n\n` +
-        `Let me know which phase you'd like to dive into!`;
+      console.warn("Copilot backend timeout/error", err);
 
       setMessages((prev) =>
         prev.map((m) =>
@@ -106,8 +96,8 @@ export default function FloatingAgentWidget() {
             ? {
                 ...m,
                 isTyping: false,
-                content: fallbackText,
-                toolTrace: ["> action: local_fallback_engine_triggered"]
+                content: "I am currently having trouble reaching the inference engine. Please retry your query in a few seconds.",
+                toolTrace: ["> action: error_fallback"]
               }
             : m
         )

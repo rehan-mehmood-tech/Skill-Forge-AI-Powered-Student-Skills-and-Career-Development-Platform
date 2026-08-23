@@ -20,18 +20,31 @@ if (!process.env.INTERNAL_API_KEY) {
   console.warn("WARNING: INTERNAL_API_KEY environment variable is not set! Using fallback for development.");
 }
 
-const redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+let redisClient = null;
+try {
+  redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+  redisClient.on('error', (err) => {
+    console.warn('Redis connection failed:', err.message);
+  });
+} catch (e) {
+  console.warn('Redis initialization failed');
+}
 
-const createLimiter = (maxRequests, windowMinutes) => rateLimit({
-  windowMs: windowMinutes * 60 * 1000,
-  max: maxRequests,
-  store: new RedisStore({
-    sendCommand: (...args) => redisClient.call(...args),
-  }),
-  message: { error: `Too many requests, please try again after ${windowMinutes} minutes.` },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+const createLimiter = (maxRequests, windowMinutes) => {
+  const options = {
+    windowMs: windowMinutes * 60 * 1000,
+    max: maxRequests,
+    message: { error: `Too many requests, please try again after ${windowMinutes} minutes.` },
+    standardHeaders: true,
+    legacyHeaders: false,
+  };
+  if (redisClient && process.env.REDIS_URL) {
+    options.store = new RedisStore({
+      sendCommand: (...args) => redisClient.call(...args),
+    });
+  }
+  return rateLimit(options);
+};
 
 const roadmapLimiter = createLimiter(5, 15);
 const chatLimiter = createLimiter(30, 15);
@@ -91,7 +104,7 @@ const forwardChatRequest = async (req, res) => {
         'X-API-Key': INTERNAL_API_KEY,
         'x-internal-key': INTERNAL_API_KEY
       },
-      timeout: 15000
+      timeout: 30000
     });
 
     res.status(response.status).json(response.data);
