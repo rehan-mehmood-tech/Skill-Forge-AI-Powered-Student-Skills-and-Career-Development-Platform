@@ -100,18 +100,13 @@ const forwardRequest = async (req, res, endpoint) => {
 
 const forwardChatRequest = async (req, res) => {
   try {
-    const payload = { ...req.body };
-    if (!payload.student_id && req.user && req.user.id) {
-      payload.student_id = req.user.id;
-    }
-
-    const response = await axios.post(`${AI_SERVICE_URL}/api/chat-agent`, payload, {
+    const response = await axios.post(`${AI_SERVICE_URL}/api/chat-agent`, req.body, {
       headers: {
         'Content-Type': 'application/json',
         'X-API-Key': INTERNAL_API_KEY,
         'x-internal-key': INTERNAL_API_KEY
       },
-      timeout: 30000
+      timeout: 25000
     });
 
     res.status(response.status).json(response.data);
