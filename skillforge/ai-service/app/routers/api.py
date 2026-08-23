@@ -229,11 +229,30 @@ async def chat_agent(req: ChatAgentRequest):
             "citations": result.get("citations", [])
         }
     except Exception as e:
-        return {
-            "response": "I'm currently experiencing technical difficulties.",
-            "action_taken": "error_fallback",
-            "citations": []
-        }
+        print(f"Graph agent failed: {str(e)}. Falling back to direct LLM.")
+        try:
+            from langchain_groq import ChatGroq
+            from langchain_core.messages import HumanMessage
+            import os
+            
+            direct_llm = ChatGroq(
+                model_name=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+                temperature=0.2,
+                api_key=os.getenv("GROQ_API_KEY")
+            )
+            response = direct_llm.invoke([HumanMessage(content=req.message)])
+            return {
+                "response": response.content,
+                "action_taken": "direct_llm",
+                "citations": []
+            }
+        except Exception as llm_e:
+            print(f"Direct LLM fallback failed: {str(llm_e)}")
+            return {
+                "response": "I'm currently experiencing technical difficulties.",
+                "action_taken": "error_fallback",
+                "citations": []
+            }
 
 @router.post("/rag-query")
 async def rag_query(req: RagQueryRequest):

@@ -22,7 +22,7 @@ tool_node = ToolNode(tools)
 
 # Initialize Groq LLM
 llm = ChatGroq(
-    model_name="llama-3.3-70b-versatile",
+    model_name=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
     temperature=0.2,
     api_key=os.getenv("GROQ_API_KEY")
 )
