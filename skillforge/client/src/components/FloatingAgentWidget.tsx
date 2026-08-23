@@ -74,6 +74,10 @@ export default function FloatingAgentWidget() {
         timeoutPromise
       ]);
 
+      if (res?.action_taken === "error_fallback" || !res?.response) {
+        throw new Error("Backend proxy failed or returned error");
+      }
+
       setMessages((prev) =>
         prev.map((m) =>
           m.id === typingMsg.id
@@ -88,20 +92,59 @@ export default function FloatingAgentWidget() {
         )
       );
     } catch (err) {
-      console.warn("Copilot backend timeout/error", err);
+      console.warn("Copilot backend timeout/error, initiating direct client Groq failover", err);
+      
+      try {
+        const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: "llama-3.3-70b-versatile",
+            messages: [
+              {
+                role: "system",
+                content: "You are the SkillForge AI Career Copilot. You provide expert, practical engineering guidance, roadmaps, and tech stacks tailored specifically to what the user asks. If the user asks about a non-tech topic (like cooking), politely refuse and guide them back to software engineering."
+              },
+              ...messages.filter(m => !m.isTyping).map(m => ({ role: m.role, content: m.content })),
+              { role: "user", content: text.trim() }
+            ],
+            temperature: 0.3
+          })
+        });
+        
+        const data = await groqRes.json();
+        const reply = data.choices?.[0]?.message?.content || "I am currently having trouble reaching the inference engine. Please retry your query in a few seconds.";
 
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === typingMsg.id
-            ? {
-                ...m,
-                isTyping: false,
-                content: "I am currently having trouble reaching the inference engine. Please retry your query in a few seconds.",
-                toolTrace: ["> action: error_fallback"]
-              }
-            : m
-        )
-      );
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === typingMsg.id
+              ? {
+                  ...m,
+                  isTyping: false,
+                  content: reply,
+                  toolTrace: ["> action: direct_client_failover"]
+                }
+              : m
+          )
+        );
+      } catch (groqErr) {
+        console.error("Direct Groq failover also failed:", groqErr);
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === typingMsg.id
+              ? {
+                  ...m,
+                  isTyping: false,
+                  content: "I am currently having trouble reaching the inference engine. Please retry your query in a few seconds.",
+                  toolTrace: ["> action: error_fallback"]
+                }
+              : m
+          )
+        );
+      }
     } finally {
       setIsStreaming(false);
     }
