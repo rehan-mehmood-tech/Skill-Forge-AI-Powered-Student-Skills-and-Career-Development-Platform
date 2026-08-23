@@ -35,23 +35,35 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Redis connection for rate limit
-const redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+const redisClient = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL, {
+  lazyConnect: true,
+  enableOfflineQueue: false,
+  maxRetriesPerRequest: 0,
+  retryStrategy: () => null // Never retry in background if connection fails
+}) : null;
 
-redisClient.on('error', (err) => {
-  console.warn('Redis connection failed, running in fallback mode');
-});
+if (redisClient) {
+  redisClient.on('error', (err) => {
+    console.warn('Redis connection failed, running in fallback mode');
+  });
+}
 
 // Rate limiting
-const apiLimiter = rateLimit({
+const apiLimiterConfig = {
   windowMs: 15 * 60 * 1000,
   max: 100,
-  store: new RedisStore({
-    sendCommand: (...args) => redisClient.call(...args),
-  }),
   message: { error: "Too many requests, please try again later." },
   standardHeaders: true,
   legacyHeaders: false,
-});
+};
+
+if (redisClient) {
+  apiLimiterConfig.store = new RedisStore({
+    sendCommand: (...args) => redisClient.call(...args),
+  });
+}
+
+const apiLimiter = rateLimit(apiLimiterConfig);
 app.use(apiLimiter);
 
 // AI Proxy Routes
@@ -95,7 +107,7 @@ if (require.main === module) {
     console.log('Received kill signal, shutting down gracefully');
     server.close(() => {
       console.log('Closed out remaining connections');
-      redisClient.quit();
+      if (redisClient) redisClient.quit();
       process.exit(0);
     });
 

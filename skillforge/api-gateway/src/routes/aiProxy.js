@@ -25,7 +25,9 @@ if (process.env.REDIS_URL) {
   try {
     redisClient = new Redis(process.env.REDIS_URL, {
       lazyConnect: true,
-      maxRetriesPerRequest: 0
+      enableOfflineQueue: false,
+      maxRetriesPerRequest: 0,
+      retryStrategy: () => null
     });
     redisClient.on('error', (err) => {
       console.warn('Redis connection failed:', err.message);
