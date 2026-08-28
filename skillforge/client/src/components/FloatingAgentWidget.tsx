@@ -45,8 +45,8 @@ export default function FloatingAgentWidget() {
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isStreaming) return;
-    const userMsg: Message = { id: Date.now().toString(), role: "user", content: text.trim() };
-    const typingMsg: Message = { id: (Date.now() + 1).toString(), role: "assistant", content: "", isTyping: true };
+    const userMsg: Message = { id: crypto.randomUUID(), role: "user", content: text.trim() };
+    const typingMsg: Message = { id: crypto.randomUUID(), role: "assistant", content: "", isTyping: true };
     setMessages((prev) => [...prev, userMsg, typingMsg]);
     setInput("");
     setIsStreaming(true);
@@ -92,62 +92,19 @@ export default function FloatingAgentWidget() {
         )
       );
     } catch (err) {
-      console.warn("Copilot backend timeout/error, initiating direct client Groq failover", err);
-      
-      try {
-        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: "llama-3.3-70b-versatile",
-            messages: [
-              {
-                role: "system",
-                content: "You are the SkillForge AI Career Copilot. You provide expert, practical engineering guidance, roadmaps, and tech stacks tailored specifically to what the user asks. If the user asks about a non-tech topic (e.g. cooking), politely refuse and guide them back to software engineering."
-              },
-              ...history,
-              { role: "user", content: text.trim() }
-            ],
-            temperature: 0.3
-          })
-        });
-
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error?.message || "Groq API error");
-        }
-        let reply = data.choices[0].message.content;
-
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === typingMsg.id
-              ? {
-                  ...m,
-                  isTyping: false,
-                  content: reply,
-                  toolTrace: ["> action: direct_client_failover"]
-                }
-              : m
-          )
-        );
-      } catch (groqErr) {
-        console.error("Direct Groq failover also failed:", groqErr);
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === typingMsg.id
-              ? {
-                  ...m,
-                  isTyping: false,
-                  content: "I am currently having trouble reaching the inference engine. Please retry your query in a few seconds.",
-                  toolTrace: ["> action: error_fallback"]
-                }
-              : m
-          )
-        );
-      }
+      console.error("Agent chat failed:", err);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === typingMsg.id
+            ? {
+                ...m,
+                isTyping: false,
+                content: "I am currently having trouble reaching the server. Please try again later.",
+                toolTrace: ["> action: connection_error"]
+              }
+            : m
+        )
+      );
     } finally {
       setIsStreaming(false);
     }

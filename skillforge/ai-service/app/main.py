@@ -52,7 +52,7 @@ from app.schemas import GenerateRoadmapRequest
 async def generate_roadmap_direct(req: GenerateRoadmapRequest):
     return await generate_roadmap_endpoint(req)
 
-app.include_router(agent_router)
+app.include_router(agent_router, dependencies=[Depends(get_api_key)])
 app.include_router(api_router, dependencies=[Depends(get_api_key)])
 
 from fastapi.responses import JSONResponse

@@ -10,3 +10,4 @@ class AgentState(TypedDict):
     skill_gaps: Optional[dict]
     roadmap_data: Optional[dict]
     citations: list[str]
+    recursion_count: Optional[int]

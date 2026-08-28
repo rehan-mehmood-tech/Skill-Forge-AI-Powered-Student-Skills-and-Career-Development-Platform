@@ -45,8 +45,7 @@ async def chat_with_agent(request: AgentChatRequest):
         )
         
     except Exception as e:
-        print(f"Agent error: {e}")
-        return AgentChatResponse(
-            response="I'm currently experiencing technical difficulties processing your request. Please try again later.",
-            action_taken="error_fallback"
-        )
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Agent error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Agent execution failed.")
